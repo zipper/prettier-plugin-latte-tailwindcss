@@ -1,0 +1,7 @@
+{* Mixed Latte template with various class constructs *}
+<div class="mt-4 flex block">regular class</div>
+<span n:class="'mt-4', 'flex', 'block'">n:class</span>
+<a href="{link Home:}" class="mt-4 inline flex">link with Latte expression</a>
+{if $show}
+<div class="hidden flex" n:class="'mt-4', 'block'">nested in block tag</div>
+{/if}
