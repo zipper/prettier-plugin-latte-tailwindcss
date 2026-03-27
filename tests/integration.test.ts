@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import * as path from 'node:path'
 import * as fs from 'node:fs'
+import { extractClassAttributes } from '../src/extract'
 import { preprocessLatte, restorePlaceholders } from '../src/preprocess'
-import { transformAst } from '../src/transform'
-import type { TailwindContext, TransformerEnv } from '../src/types'
+import { sortClasses } from '../src/sorting'
+import { sortNClassValue } from '../src/nclass'
+import { sortArrayClassValue } from '../src/array-class'
+import type { TailwindContext, LatteOptions } from '../src/types'
 
 // Alphabetical mock context — deterministic sorting without real Tailwind v4.
 // Each class gets a bigint based on its sorted position.
@@ -22,84 +25,94 @@ function createAlphabeticalContext(): TailwindContext {
 const ctx = createAlphabeticalContext()
 const fixturesDir = path.resolve(__dirname, 'fixtures')
 
-/**
- * Simulate the full plugin pipeline:
- *   1. preprocess — replace Latte constructs with placeholders
- *   2. parse with HTML parser (via prettier/plugins/html)
- *   3. transform — sort classes and restore placeholders
- *   4. print with HTML printer
- *
- * Since Prettier's plugin loading can't handle .ts files directly,
- * we replicate the pipeline by importing functions directly and using
- * prettier.format with the built-in HTML parser for parse+print steps.
- */
-async function formatLatte(input: string): Promise<string> {
-  const prettier = await import('prettier')
-  const html = await import('prettier/plugins/html')
+const defaultOpts: LatteOptions = {
+  tailwindPreserveWhitespace: false,
+  tailwindPreserveDuplicates: false,
+  tailwindNclassWhitespace: 'normalize-barriers',
+}
 
+/**
+ * Simulate the full text-based plugin pipeline:
+ *   1. preprocess — replace Latte constructs with placeholders
+ *   2. extract — find class attributes in preprocessed text
+ *   3. sort — sort class values
+ *   4. restore — replace placeholders back
+ *
+ * This matches the actual plugin flow in index.ts.
+ */
+function formatLatte(input: string): string {
   // Step 1: Latte preprocess
   const { code: processed, map } = preprocessLatte(input)
 
-  // Step 2+4: Parse as HTML and print — hook transform between parse and print.
-  const testPlugin = {
-    languages: [
-      {
-        name: 'Latte',
-        parsers: ['latte-test'],
-        extensions: ['.latte'],
-      },
-    ],
-    parsers: {
-      'latte-test': {
-        ...html.parsers.html,
-        astFormat: 'html' as const,
-        async parse(code: string, parserOptions: any) {
-          const ast = await html.parsers.html.parse(processed, parserOptions)
+  // Step 2: Extract class attributes
+  const matches = extractClassAttributes(processed, [])
 
-          const env: TransformerEnv = {
-            context: ctx,
-            options: {
-              ...parserOptions,
-              tailwindPreserveWhitespace: false,
-              tailwindPreserveDuplicates: false,
-              tailwindNclassWhitespace: 'normalize-barriers' as const,
-            },
-          }
+  // Step 3: Sort — apply from end to start to preserve offsets
+  const sorted = [...matches].sort((a, b) => b.offset - a.offset)
+  let result = processed
 
-          transformAst(ast, env, map)
-          return ast
-        },
-      },
-    },
-    printers: {},
+  for (const match of sorted) {
+    let replacement: string
+
+    switch (match.type) {
+      case 'class':
+        replacement = sortClasses(match.value, ctx, {
+          removeDuplicates: !defaultOpts.tailwindPreserveDuplicates,
+          preserveWhitespace: defaultOpts.tailwindPreserveWhitespace,
+        })
+        break
+
+      case 'n:class':
+        replacement = sortNClassValue(match.value, ctx, defaultOpts)
+        break
+
+      case 'array-class': {
+        const sortFn = (classes: string) =>
+          sortClasses(classes, ctx, {
+            removeDuplicates: false,
+            preserveWhitespace: false,
+          })
+        replacement = sortArrayClassValue(match.value, sortFn)
+        break
+      }
+
+      case 'tailwind-attribute':
+        replacement = sortClasses(match.value, ctx, {
+          removeDuplicates: !defaultOpts.tailwindPreserveDuplicates,
+          preserveWhitespace: defaultOpts.tailwindPreserveWhitespace,
+        })
+        break
+
+      default:
+        continue
+    }
+
+    if (replacement !== match.value) {
+      result =
+        result.slice(0, match.offset) +
+        replacement +
+        result.slice(match.offset + match.length)
+    }
   }
 
-  return prettier.format(input, {
-    parser: 'latte-test',
-    plugins: [testPlugin as any],
-    htmlWhitespaceSensitivity: 'ignore',
-    printWidth: 200,
-    singleAttributePerLine: false,
-  })
+  // Step 4: Restore placeholders
+  return restorePlaceholders(result, map)
 }
 
 // ─── Fixture-based integration tests ───
 
-// Fixtures that support full idempotence testing (no unquoted array class syntax)
-const idempotentFixtures = ['basic', 'nclass', 'mixed'] as const
+// All fixtures support idempotence with text-based processing
+// (no HTML printer to mangle unquoted attributes)
+const fixtures = ['basic', 'nclass', 'mixed', 'array-class'] as const
 
-// Fixtures that only support single-pass formatting (array class uses unquoted
-// attribute values that get quoted by HTML printer, breaking re-parse)
-const formatOnlyFixtures = ['array-class'] as const
-
-for (const category of idempotentFixtures) {
+for (const category of fixtures) {
   describe(`integration — ${category}`, () => {
     const inputPath = path.join(fixturesDir, category, 'input.latte')
     const snapshotPath = path.join(fixturesDir, category, 'output.latte')
 
     it('formats input and matches snapshot', async () => {
       const input = fs.readFileSync(inputPath, 'utf-8')
-      const result = await formatLatte(input)
+      const result = formatLatte(input)
 
       expect(result).toBeTruthy()
       expect(typeof result).toBe('string')
@@ -107,33 +120,12 @@ for (const category of idempotentFixtures) {
       await expect(result).toMatchFileSnapshot(snapshotPath)
     })
 
-    it('is idempotent (formatting twice produces same result)', async () => {
+    it('is idempotent (formatting twice produces same result)', () => {
       const input = fs.readFileSync(inputPath, 'utf-8')
-      const once = await formatLatte(input)
-      const twice = await formatLatte(once)
+      const once = formatLatte(input)
+      const twice = formatLatte(once)
       expect(twice).toBe(once)
     })
-  })
-}
-
-for (const category of formatOnlyFixtures) {
-  describe(`integration — ${category}`, () => {
-    const inputPath = path.join(fixturesDir, category, 'input.latte')
-    const snapshotPath = path.join(fixturesDir, category, 'output.latte')
-
-    it('formats input and matches snapshot', async () => {
-      const input = fs.readFileSync(inputPath, 'utf-8')
-      const result = await formatLatte(input)
-
-      expect(result).toBeTruthy()
-      expect(typeof result).toBe('string')
-
-      await expect(result).toMatchFileSnapshot(snapshotPath)
-    })
-
-    // Array class uses unquoted attribute values class={[...]}.
-    // After HTML printer quotes them, the ={[ pattern is lost on re-parse.
-    // Idempotence for array class is verified at the unit level in array-class.test.ts.
   })
 }
 
@@ -150,9 +142,9 @@ describe('idempotence — inline inputs', () => {
   ]
 
   for (const [name, input] of cases) {
-    it(`idempotent: ${name}`, async () => {
-      const once = await formatLatte(input)
-      const twice = await formatLatte(once)
+    it(`idempotent: ${name}`, () => {
+      const once = formatLatte(input)
+      const twice = formatLatte(once)
       expect(twice).toBe(once)
     })
   }

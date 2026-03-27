@@ -1,7 +1,7 @@
-__LP_0000000000000000__
+{* Mixed Latte template with various class constructs *}
 <div class="block flex mt-4">regular class</div>
-<span n:class="'block' 'flex', 'mt-4',">n:class</span>
+<span n:class="'block', 'flex', 'mt-4'">n:class</span>
 <a href="{link Home:}" class="flex inline mt-4">link with Latte expression</a>
-__LP_0000000000000002__
-<div class="flex hidden" n:class="'block' 'mt-4',">nested in block tag</div>
-__LP_0000000000000003__
+{if $show}
+<div class="flex hidden" n:class="'block', 'mt-4'">nested in block tag</div>
+{/if}

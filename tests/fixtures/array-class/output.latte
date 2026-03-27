@@ -1,5 +1,4 @@
-<!-- Array class fixture: bare identifiers and dynamic barriers only.
-     Quoted strings and keyed pairs break the HTML parser (see integration.test.ts). -->
-<div class="{[mt-4," flex, block]}>bare identifiers</div>
-<a class="{[mt-4," flex, block, hidden]}>multiple bare identifiers</a>
-<p class="{[flex," $dynamicClass, hidden, block]}>dynamic barrier</p>
+<!-- Array class fixture: bare identifiers and dynamic barriers -->
+<div class={[block, flex, mt-4]}>bare identifiers</div>
+<a class={[block, flex, hidden, mt-4]}>multiple bare identifiers</a>
+<p class={[flex, $dynamicClass, block, hidden]}>dynamic barrier</p>

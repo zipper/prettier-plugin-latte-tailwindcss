@@ -107,7 +107,11 @@ describe('sortClasses', () => {
     expect(sortClasses('flex', ctx)).toBe('flex')
   })
 
-  it('handles trailing whitespace', () => {
-    expect(sortClasses('mt-1 flex ', ctx)).toBe('flex mt-1 ')
+  it('strips trailing whitespace when preserveWhitespace is false', () => {
+    expect(sortClasses('mt-1 flex ', ctx)).toBe('flex mt-1')
+  })
+
+  it('preserves trailing whitespace when preserveWhitespace is true', () => {
+    expect(sortClasses('mt-1 flex ', ctx, { preserveWhitespace: true })).toBe('flex mt-1 ')
   })
 })

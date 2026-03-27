@@ -30,8 +30,15 @@ export function sortClasses(
   let classes = parts.filter((_, i) => i % 2 === 0)
   let whitespace = parts.filter((_, i) => i % 2 !== 0)
 
-  // Remove trailing empty token left by trailing whitespace
-  if (classes[classes.length - 1] === '') classes.pop()
+  // Remove empty tokens from leading/trailing whitespace
+  if (classes[classes.length - 1] === '') {
+    classes.pop()
+    if (!preserveWhitespace) whitespace.pop()
+  }
+  if (!preserveWhitespace && classes[0] === '') {
+    classes.shift()
+    whitespace.shift()
+  }
 
   // Collapse whitespace separators unless preserveWhitespace is set
   if (!preserveWhitespace) {
