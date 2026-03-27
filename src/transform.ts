@@ -1,3 +1,4 @@
+import { sortArrayClassValue } from './array-class'
 import { sortNClassValue } from './nclass'
 import { restorePlaceholders } from './preprocess'
 import { sortClasses } from './sorting'
@@ -22,9 +23,8 @@ interface AttrNode {
 /**
  * Walk the HTML AST and:
  *   1. Sort class attribute values using Tailwind order
- *   2. Restore Latte placeholders in all attribute values and text nodes
- *
- * class={[...]} sorting is handled in Phase 7 (array-class.ts).
+ *   2. Sort array class={[...]} items by Tailwind order
+ *   3. Restore Latte placeholders in all attribute values and text nodes
  */
 export function transformAst(
   ast: unknown,
@@ -68,9 +68,21 @@ function processAttr(attr: AttrNode, env: TransformerEnv, map: PlaceholderMap): 
   const value = attr.value
 
   if (name === 'class') {
-    // Array class syntax class={[...]} — preserve as-is, sorted in Phase 7
+    // Array class syntax class={[...]} — sort items by Tailwind order
     if (value.startsWith('{[')) {
-      attr.value = restorePlaceholders(value, map)
+      const restored = restorePlaceholders(value, map)
+      if (env.context) {
+        // Array class items must never be deduplicated: duplicate class names
+      // with different conditions are valid, e.g. {['flex' => $a, 'flex' => $b]}
+      const sortFn = (classes: string) =>
+          sortClasses(classes, env.context, {
+            removeDuplicates: false,
+            preserveWhitespace: false,
+          })
+        attr.value = sortArrayClassValue(restored, sortFn)
+      } else {
+        attr.value = restored
+      }
       return
     }
 
@@ -84,6 +96,8 @@ function processAttr(attr: AttrNode, env: TransformerEnv, map: PlaceholderMap): 
     return
   }
 
+  // Note: array syntax in n:class (e.g. n:class="{['active' => $x]}") is not supported.
+  // Latte v3 likely does not allow array syntax in n:class attributes.
   if (name === 'n:class') {
     const sorted = sortNClassValue(value, env.context, env.options)
     attr.value = restorePlaceholders(sorted, map)

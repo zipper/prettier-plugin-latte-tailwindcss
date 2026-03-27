@@ -31,6 +31,14 @@
   ],
   "author": "Radek Šerý <radek.sery@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zipper/prettier-plugin-latte-tailwind.git"
+  },
+  "homepage": "https://github.com/zipper/prettier-plugin-latte-tailwind#readme",
+  "bugs": {
+    "url": "https://github.com/zipper/prettier-plugin-latte-tailwind/issues"
+  },
   "peerDependencies": {
     "prettier": ">=3.0.0"
   },
