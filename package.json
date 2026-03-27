@@ -1,0 +1,55 @@
+{
+  "name": "prettier-plugin-latte-tailwind",
+  "version": "0.1.0",
+  "description": "Prettier plugin for sorting Tailwind CSS v4 classes in Latte v3 templates",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "prettier",
+    "prettier-plugin",
+    "tailwindcss",
+    "latte",
+    "nette"
+  ],
+  "author": "Radek Šerý <radek.sery@gmail.com>",
+  "license": "MIT",
+  "peerDependencies": {
+    "prettier": ">=3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tailwindcss/node": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@tailwindcss/node": "^4.0.0",
+    "@types/node": "^20.0.0",
+    "enhanced-resolve": "^5.15.0",
+    "jiti": "^2.6.0",
+    "prettier": "^3.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}
