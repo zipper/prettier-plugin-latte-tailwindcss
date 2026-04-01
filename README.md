@@ -1,7 +1,7 @@
 # prettier-plugin-latte-tailwind
 
 [![npm version](https://img.shields.io/npm/v/prettier-plugin-latte-tailwind.svg)](https://www.npmjs.com/package/prettier-plugin-latte-tailwind)
-[![license](https://img.shields.io/npm/l/prettier-plugin-latte-tailwind.svg)](https://github.com/nicvisual/prettier-plugin-latte-tailwind/blob/main/LICENSE)
+[![license](https://img.shields.io/npm/l/prettier-plugin-latte-tailwind.svg)](https://github.com/zipper/prettier-plugin-latte-tailwind/blob/main/LICENSE)
 
 A Prettier plugin that sorts Tailwind CSS v4 classes in [Latte v3](https://latte.nette.org/) templates.
 
@@ -77,6 +77,7 @@ The plugin auto-detects classRegex patterns from your IDE configuration (`.vscod
 | `tailwindNclassWhitespace` | `string` | `"normalize-barriers"` | How n:class whitespace is handled: `preserve`, `normalize-barriers`, `normalize` |
 | `tailwindPreserveWhitespace` | `boolean` | `false` | Preserve whitespace in class attributes |
 | `tailwindPreserveDuplicates` | `boolean` | `false` | Keep duplicate classes |
+| `tailwindPropertyOrder` | `string` | `""` | Path to stylelint-order compatible config for custom CSS property ordering |
 
 See [Options documentation](docs/options.md) for detailed descriptions and examples.
 
