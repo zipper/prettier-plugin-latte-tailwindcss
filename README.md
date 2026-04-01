@@ -1,7 +1,7 @@
-# prettier-plugin-latte-tailwind
+# prettier-plugin-latte-tailwindcss
 
-[![npm version](https://img.shields.io/npm/v/prettier-plugin-latte-tailwind.svg)](https://www.npmjs.com/package/prettier-plugin-latte-tailwind)
-[![license](https://img.shields.io/npm/l/prettier-plugin-latte-tailwind.svg)](https://github.com/zipper/prettier-plugin-latte-tailwind/blob/main/LICENSE)
+[![npm version](https://img.shields.io/npm/v/prettier-plugin-latte-tailwindcss.svg)](https://www.npmjs.com/package/prettier-plugin-latte-tailwindcss)
+[![license](https://img.shields.io/npm/l/prettier-plugin-latte-tailwindcss.svg)](https://github.com/zipper/prettier-plugin-latte-tailwindcss/blob/main/LICENSE)
 
 A Prettier plugin that sorts Tailwind CSS v4 classes in [Latte v3](https://latte.nette.org/) templates.
 
@@ -10,7 +10,7 @@ The official `prettier-plugin-tailwindcss` does not support Latte. This plugin f
 ## Installation
 
 ```bash
-npm install -D prettier-plugin-latte-tailwind
+npm install -D prettier-plugin-latte-tailwindcss
 ```
 
 Peer dependencies: `prettier >= 3.0.0`. For class sorting, you also need `@tailwindcss/node >= 4.0.0`.
@@ -19,7 +19,7 @@ Minimal `.prettierrc`:
 
 ```json
 {
-  "plugins": ["prettier-plugin-latte-tailwind"],
+  "plugins": ["prettier-plugin-latte-tailwindcss"],
   "tailwindStylesheet": "./resources/css/app.css"
 }
 ```

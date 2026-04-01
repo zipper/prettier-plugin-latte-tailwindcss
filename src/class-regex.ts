@@ -21,12 +21,12 @@ export function parseClassRegexPatterns(json: string): ClassRegexPattern[] {
   try {
     raw = JSON.parse(json)
   } catch {
-    console.warn('prettier-plugin-latte-tailwind: Invalid tailwindClassRegex JSON')
+    console.warn('prettier-plugin-latte-tailwindcss: Invalid tailwindClassRegex JSON')
     return []
   }
 
   if (!Array.isArray(raw)) {
-    console.warn('prettier-plugin-latte-tailwind: Invalid tailwindClassRegex JSON')
+    console.warn('prettier-plugin-latte-tailwindcss: Invalid tailwindClassRegex JSON')
     return []
   }
 
@@ -64,7 +64,7 @@ function parseClassRegexArray(raw: unknown[]): ClassRegexPattern[] {
         })
       }
     } catch {
-      console.warn('prettier-plugin-latte-tailwind: Invalid regex in tailwindClassRegex, skipping pattern')
+      console.warn('prettier-plugin-latte-tailwindcss: Invalid regex in tailwindClassRegex, skipping pattern')
     }
   }
 
@@ -86,7 +86,7 @@ function isUnsafePattern(source: string): boolean {
 
 function warnUnsafe(source: string): void {
   console.warn(
-    `prettier-plugin-latte-tailwind: Skipping dangerous classRegex pattern "${source}" — ` +
+    `prettier-plugin-latte-tailwindcss: Skipping dangerous classRegex pattern "${source}" — ` +
       'unbounded greedy quantifier can match entire file content. ' +
       'Use bounded patterns like [^"]*  or [^\\]]*  instead.'
   )

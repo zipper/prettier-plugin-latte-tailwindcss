@@ -15,7 +15,7 @@ describe('parseClassRegexPatterns', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const result = parseClassRegexPatterns('not json')
     expect(result).toEqual([])
-    expect(warn).toHaveBeenCalledWith('prettier-plugin-latte-tailwind: Invalid tailwindClassRegex JSON')
+    expect(warn).toHaveBeenCalledWith('prettier-plugin-latte-tailwindcss: Invalid tailwindClassRegex JSON')
     warn.mockRestore()
   })
 

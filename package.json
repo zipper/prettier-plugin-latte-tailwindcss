@@ -1,5 +1,5 @@
 {
-  "name": "prettier-plugin-latte-tailwind",
+  "name": "prettier-plugin-latte-tailwindcss",
   "version": "0.2.1",
   "description": "Prettier plugin for sorting Tailwind CSS v4 classes in Latte v3 templates",
   "type": "module",
@@ -37,11 +37,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zipper/prettier-plugin-latte-tailwind.git"
+    "url": "git+https://github.com/zipper/prettier-plugin-latte-tailwindcss.git"
   },
-  "homepage": "https://github.com/zipper/prettier-plugin-latte-tailwind#readme",
+  "homepage": "https://github.com/zipper/prettier-plugin-latte-tailwindcss#readme",
   "bugs": {
-    "url": "https://github.com/zipper/prettier-plugin-latte-tailwind/issues"
+    "url": "https://github.com/zipper/prettier-plugin-latte-tailwindcss/issues"
   },
   "peerDependencies": {
     "prettier": ">=3.0.0"

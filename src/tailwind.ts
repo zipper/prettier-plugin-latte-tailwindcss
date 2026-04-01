@@ -71,7 +71,7 @@ async function doLoad(
     tailwindPath = resolveJsFrom(configDir, '@tailwindcss/node')
   } catch {
     console.warn(
-      '[prettier-plugin-latte-tailwind] @tailwindcss/node not found — class sorting disabled.\n' +
+      '[prettier-plugin-latte-tailwindcss] @tailwindcss/node not found — class sorting disabled.\n' +
         'Install it: npm install --save-dev @tailwindcss/node'
     )
     return null
@@ -88,13 +88,13 @@ async function doLoad(
     url.searchParams.append('t', cacheKey)
     tailwindMod = (await jiti.import(url.href, { default: true })) as TailwindApi
   } catch (err) {
-    console.warn('[prettier-plugin-latte-tailwind] Failed to load @tailwindcss/node:', err)
+    console.warn('[prettier-plugin-latte-tailwindcss] Failed to load @tailwindcss/node:', err)
     return null
   }
 
   if (typeof tailwindMod.__unstable__loadDesignSystem !== 'function') {
     console.warn(
-      '[prettier-plugin-latte-tailwind] @tailwindcss/node does not export __unstable__loadDesignSystem — ' +
+      '[prettier-plugin-latte-tailwindcss] @tailwindcss/node does not export __unstable__loadDesignSystem — ' +
         'is Tailwind CSS v4 installed?'
     )
     return null
@@ -128,7 +128,7 @@ async function doLoad(
       loadConfig: loader.loadConfig
     })
   } catch (err) {
-    console.warn('[prettier-plugin-latte-tailwind] Failed to load Tailwind design system:', err)
+    console.warn('[prettier-plugin-latte-tailwindcss] Failed to load Tailwind design system:', err)
     return null
   }
 
@@ -145,7 +145,7 @@ async function doLoad(
       typeof design.getVariants !== 'function'
     ) {
       console.warn(
-        '[prettier-plugin-latte-tailwind] tailwindPropertyOrder requires Tailwind CSS v4 with candidatesToAst API — ' +
+        '[prettier-plugin-latte-tailwindcss] tailwindPropertyOrder requires Tailwind CSS v4 with candidatesToAst API — ' +
           'custom property ordering disabled.'
       )
     } else {
@@ -195,7 +195,7 @@ function createLoader({
       try {
         return await loadFile(id, baseDir)
       } catch (err) {
-        console.warn(`[prettier-plugin-latte-tailwind] Unable to load plugin: ${id}`, err)
+        console.warn(`[prettier-plugin-latte-tailwindcss] Unable to load plugin: ${id}`, err)
         return () => {}
       }
     },
@@ -204,7 +204,7 @@ function createLoader({
       try {
         return await loadFile(id, baseDir)
       } catch (err) {
-        console.warn(`[prettier-plugin-latte-tailwind] Unable to load config: ${id}`, err)
+        console.warn(`[prettier-plugin-latte-tailwindcss] Unable to load config: ${id}`, err)
         return {}
       }
     },

@@ -41,7 +41,7 @@ function findIdeClassRegex(startDir: string): unknown[] | null {
     const vscode = readVscodeClassRegex(dir)
     if (vscode !== null) {
       console.log(
-        `[prettier-plugin-latte-tailwind] Using classRegex from ${path.join(dir, '.vscode', 'settings.json')}`
+        `[prettier-plugin-latte-tailwindcss] Using classRegex from ${path.join(dir, '.vscode', 'settings.json')}`
       )
       return vscode
     }
@@ -49,7 +49,7 @@ function findIdeClassRegex(startDir: string): unknown[] | null {
     const phpstorm = readPhpStormClassRegex(dir)
     if (phpstorm !== null) {
       console.log(
-        `[prettier-plugin-latte-tailwind] Using classRegex from ${path.join(dir, '.idea', 'tailwindcss.xml')}`
+        `[prettier-plugin-latte-tailwindcss] Using classRegex from ${path.join(dir, '.idea', 'tailwindcss.xml')}`
       )
       return phpstorm
     }

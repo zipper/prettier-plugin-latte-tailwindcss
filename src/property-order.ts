@@ -110,7 +110,7 @@ export async function loadPropertyOrderConfig(
       }
     }
   } catch (err) {
-    console.warn(`[prettier-plugin-latte-tailwind] Failed to load property order config: ${configPath}`, err)
+    console.warn(`[prettier-plugin-latte-tailwindcss] Failed to load property order config: ${configPath}`, err)
     return null
   }
 
@@ -140,7 +140,7 @@ export function parsePropertyOrderConfig(raw: unknown): { properties: string[]; 
       return parsePropertiesOrderRule(directOrder)
     }
 
-    console.warn('[prettier-plugin-latte-tailwind] Property order config is not a recognized format')
+    console.warn('[prettier-plugin-latte-tailwindcss] Property order config is not a recognized format')
     return null
   }
 
@@ -149,7 +149,7 @@ export function parsePropertyOrderConfig(raw: unknown): { properties: string[]; 
     return parsePropertiesOrderRule(raw)
   }
 
-  console.warn('[prettier-plugin-latte-tailwind] Property order config is not a recognized format')
+  console.warn('[prettier-plugin-latte-tailwindcss] Property order config is not a recognized format')
   return null
 }
 
@@ -159,7 +159,7 @@ export function parsePropertyOrderConfig(raw: unknown): { properties: string[]; 
  */
 function parsePropertiesOrderRule(value: unknown): { properties: string[]; unspecified: string } | null {
   if (!Array.isArray(value)) {
-    console.warn('[prettier-plugin-latte-tailwind] properties-order must be an array')
+    console.warn('[prettier-plugin-latte-tailwindcss] properties-order must be an array')
     return null
   }
 
@@ -191,7 +191,7 @@ function parsePropertiesOrderRule(value: unknown): { properties: string[]; unspe
   const properties = flattenPropertyItems(items)
 
   if (properties.length === 0) {
-    console.warn('[prettier-plugin-latte-tailwind] Property order config contains no properties')
+    console.warn('[prettier-plugin-latte-tailwindcss] Property order config contains no properties')
     return null
   }
 
