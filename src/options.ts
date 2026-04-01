@@ -10,7 +10,7 @@ export const options: Record<string, SupportOption> = {
   tailwindAttributes: {
     type: 'string',
     array: true,
-    // Empty by default — 'class' and 'n:class' are built-in in transform.ts
+    // Empty by default — 'class' and 'n:class' are built-in
     default: [{ value: [] }],
     category: 'Tailwind CSS',
     description: 'Additional attributes/props that contain sortable Tailwind classes',
@@ -28,6 +28,24 @@ export const options: Record<string, SupportOption> = {
     default: false,
     category: 'Tailwind CSS',
     description: 'Preserve duplicate classes inside a class list when sorting',
+  },
+
+  tailwindClassRegex: {
+    type: 'string',
+    default: '',
+    category: 'Tailwind CSS',
+    description:
+      'JSON array of classRegex patterns (compatible with tailwindCSS.experimental.classRegex). ' +
+      'Set to "[]" to disable. If empty, auto-detected from .vscode/settings.json or .idea/tailwindcss.xml.',
+  },
+
+  tailwindPropertyOrder: {
+    type: 'string',
+    default: '',
+    category: 'Tailwind CSS',
+    description:
+      'Path to a JS/JSON file exporting a stylelint-order compatible properties-order array. ' +
+      'Empty string (default) disables custom ordering and uses Tailwind\'s native order.',
   },
 
   tailwindNclassWhitespace: {

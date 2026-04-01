@@ -11,7 +11,7 @@ const PLACEHOLDER_RE = /__LP_[0-9a-f]{16}__/g
  *   <tag{$dynamicName}>                           — whole opening tag with dynamic name
  *
  * NOT replaced:
- *   class={[...]}  — unquoted array class, handled in AST phase (transform.ts)
+ *   class={[...]}  — unquoted array class, handled in extract phase (extract.ts)
  */
 export function preprocessLatte(code: string): PreprocessResult {
   const map = new Map<string, string>()
@@ -108,7 +108,7 @@ export function preprocessLatte(code: string): PreprocessResult {
 
 /**
  * Restore placeholders in a string back to their original Latte constructs.
- * Called in transform.ts on attr.value and text node values.
+ * Called in index.ts after sorting to restore original Latte constructs.
  */
 export function restorePlaceholders(str: string, map: Map<string, string>): string {
   return str.replace(PLACEHOLDER_RE, (ph) => map.get(ph) ?? ph)

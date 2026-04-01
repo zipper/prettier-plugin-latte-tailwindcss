@@ -1,3 +1,4 @@
+import { UNSPECIFIED_IGNORE, getClassSortInfo } from './property-order'
 import { sortClasses } from './sorting'
 import type { LatteOptions, TailwindContext } from './types'
 
@@ -365,20 +366,48 @@ function sortGroup(
 
   const group = tokens.slice(start, end)
   const classNames = group.map(t => t.sortKey)
-  const order = context.getClassOrder(classNames)
 
-  // Sort indices by Tailwind bigint order (null = FIRST)
-  const indices = order.map(([, bigint], i) => ({ i, bigint }))
-  indices.sort((a, b) => {
-    if (a.bigint === b.bigint) return 0
-    if (a.bigint === null) return -1
-    if (b.bigint === null) return 1
-    return a.bigint < b.bigint ? -1 : 1
-  })
+  if (context.propertyOrder) {
+    // Custom property ordering
+    const propCtx = context.propertyOrder
+    const order = context.getClassOrder(classNames)
+    const indices = order.map(([name, twBigint], i) => ({
+      i,
+      twBigint,
+      ...getClassSortInfo(name, propCtx),
+    }))
 
-  // Write sorted tokens back into the main array
-  const sorted = indices.map(({ i }) => group[i])
-  for (let i = 0; i < sorted.length; i++) {
-    tokens[start + i] = sorted[i]
+    indices.sort((a, b) => {
+      if (a.twBigint === null && b.twBigint !== null) return -1
+      if (a.twBigint !== null && b.twBigint === null) return 1
+      if (a.twBigint === null && b.twBigint === null) return 0
+      if (a.variantKey !== b.variantKey) return a.variantKey - b.variantKey
+      if (a.propIndex !== b.propIndex) {
+        if (a.propIndex === UNSPECIFIED_IGNORE && b.propIndex === UNSPECIFIED_IGNORE) {
+          return a.twBigint! < b.twBigint! ? -1 : a.twBigint! > b.twBigint! ? 1 : 0
+        }
+        if (a.propIndex === UNSPECIFIED_IGNORE) return 1
+        if (b.propIndex === UNSPECIFIED_IGNORE) return -1
+        return a.propIndex - b.propIndex
+      }
+      if (a.twBigint === b.twBigint) return 0
+      return a.twBigint! < b.twBigint! ? -1 : 1
+    })
+
+    const sorted = indices.map(({ i }) => group[i])
+    for (let k = 0; k < sorted.length; k++) tokens[start + k] = sorted[k]
+  } else {
+    // Default Tailwind ordering
+    const order = context.getClassOrder(classNames)
+    const indices = order.map(([, bigint], i) => ({ i, bigint }))
+    indices.sort((a, b) => {
+      if (a.bigint === b.bigint) return 0
+      if (a.bigint === null) return -1
+      if (b.bigint === null) return 1
+      return a.bigint < b.bigint ? -1 : 1
+    })
+
+    const sorted = indices.map(({ i }) => group[i])
+    for (let k = 0; k < sorted.length; k++) tokens[start + k] = sorted[k]
   }
 }
