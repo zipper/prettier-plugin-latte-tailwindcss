@@ -10,11 +10,7 @@ export interface SortOptions {
  * Sort a whitespace-separated class string using Tailwind order.
  * Returns the string unchanged if context is null or the string contains Latte expressions.
  */
-export function sortClasses(
-  classStr: string,
-  context: TailwindContext | null,
-  opts: SortOptions = {},
-): string {
+export function sortClasses(classStr: string, context: TailwindContext | null, opts: SortOptions = {}): string {
   if (!context) return classStr
   if (typeof classStr !== 'string' || classStr === '') return classStr
 
@@ -28,7 +24,7 @@ export function sortClasses(
 
   // Split into alternating [class, separator, class, separator, ...] tokens
   const parts = classStr.split(/([\t\r\f\n ]+)/)
-  let classes = parts.filter((_, i) => i % 2 === 0)
+  const classes = parts.filter((_, i) => i % 2 === 0)
   let whitespace = parts.filter((_, i) => i % 2 !== 0)
 
   // Remove empty tokens from leading/trailing whitespace
@@ -70,7 +66,7 @@ export function sortClasses(
 export function sortClassList(
   classList: string[],
   context: TailwindContext,
-  removeDuplicates = true,
+  removeDuplicates = true
 ): { classList: string[]; removedIndices: Set<number> } {
   let orderedClasses = context.getClassOrder(classList)
 
@@ -80,7 +76,7 @@ export function sortClassList(
     const infos = orderedClasses.map(([name, twBigint]) => ({
       name,
       twBigint,
-      ...getClassSortInfo(name, propCtx),
+      ...getClassSortInfo(name, propCtx)
     }))
 
     infos.sort((a, b) => {
@@ -139,6 +135,6 @@ export function sortClassList(
 
   return {
     classList: orderedClasses.map(([cls]) => cls),
-    removedIndices,
+    removedIndices
   }
 }

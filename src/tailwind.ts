@@ -39,7 +39,7 @@ const prettierConfigCache = new Map<string, string>()
 export async function loadTailwindContext(
   stylesheet: string | undefined,
   filepath: string,
-  propertyOrderPath?: string,
+  propertyOrderPath?: string
 ): Promise<TailwindContext | null> {
   const inputDir = filepath ? path.dirname(filepath) : process.cwd()
   const configDir = await resolvePrettierConfigDir(filepath, inputDir)
@@ -47,9 +47,7 @@ export async function loadTailwindContext(
   // Relative paths are resolved from the .prettierrc directory
   let resolvedStylesheet: string | undefined
   if (stylesheet) {
-    resolvedStylesheet = path.isAbsolute(stylesheet)
-      ? stylesheet
-      : path.resolve(configDir, stylesheet)
+    resolvedStylesheet = path.isAbsolute(stylesheet) ? stylesheet : path.resolve(configDir, stylesheet)
   }
 
   const cacheKey = `${configDir}::${resolvedStylesheet ?? ''}::${propertyOrderPath ?? ''}`
@@ -65,7 +63,7 @@ export async function loadTailwindContext(
 async function doLoad(
   stylesheet: string | undefined,
   configDir: string,
-  propertyOrderPath?: string,
+  propertyOrderPath?: string
 ): Promise<TailwindContext | null> {
   // Locate @tailwindcss/node in the user's project
   let tailwindPath: string
@@ -74,7 +72,7 @@ async function doLoad(
   } catch {
     console.warn(
       '[prettier-plugin-latte-tailwind] @tailwindcss/node not found — class sorting disabled.\n' +
-      'Install it: npm install --save-dev @tailwindcss/node',
+        'Install it: npm install --save-dev @tailwindcss/node'
     )
     return null
   }
@@ -97,7 +95,7 @@ async function doLoad(
   if (typeof tailwindMod.__unstable__loadDesignSystem !== 'function') {
     console.warn(
       '[prettier-plugin-latte-tailwind] @tailwindcss/node does not export __unstable__loadDesignSystem — ' +
-      'is Tailwind CSS v4 installed?',
+        'is Tailwind CSS v4 installed?'
     )
     return null
   }
@@ -127,7 +125,7 @@ async function doLoad(
       loadModule: loader.loadModule,
       loadStylesheet: loader.loadStylesheet,
       loadPlugin: loader.loadPlugin,
-      loadConfig: loader.loadConfig,
+      loadConfig: loader.loadConfig
     })
   } catch (err) {
     console.warn('[prettier-plugin-latte-tailwind] Failed to load Tailwind design system:', err)
@@ -135,7 +133,7 @@ async function doLoad(
   }
 
   const context: TailwindContext = {
-    getClassOrder: (classList: string[]) => design.getClassOrder(classList),
+    getClassOrder: (classList: string[]) => design.getClassOrder(classList)
   }
 
   // Load property order config if specified
@@ -148,7 +146,7 @@ async function doLoad(
     ) {
       console.warn(
         '[prettier-plugin-latte-tailwind] tailwindPropertyOrder requires Tailwind CSS v4 with candidatesToAst API — ' +
-        'custom property ordering disabled.',
+          'custom property ordering disabled.'
       )
     } else {
       const config = await loadPropertyOrderConfig(propertyOrderPath, configDir)
@@ -157,7 +155,7 @@ async function doLoad(
           candidatesToAst: (classes) => design.candidatesToAst!(classes) as any,
           parseCandidate: (candidate) => design.parseCandidate!(candidate) as any,
           getVariantOrder: () => design.getVariantOrder!() as any,
-          getVariants: () => design.getVariants!() as any,
+          getVariants: () => design.getVariants!() as any
         }
         context.propertyOrder = createPropertyOrderContext(config, ds)
       }
@@ -170,7 +168,7 @@ async function doLoad(
 function createLoader({
   jiti,
   cacheKey,
-  stylesheetPath,
+  stylesheetPath
 }: {
   jiti: ReturnType<typeof createJiti>
   cacheKey: string
@@ -189,7 +187,7 @@ function createLoader({
     // Non-legacy signature: returns { base, module } (used by loadModule in @tailwindcss/node)
     loadModule: async (id: string, base: string, _resourceType: string) => ({
       base,
-      module: await loadFile(id, base),
+      module: await loadFile(id, base)
     }),
 
     // Legacy signature: returns value directly (used by loadPlugin and loadConfig)
@@ -216,9 +214,9 @@ function createLoader({
       const resolved = resolveCssFrom(base, id)
       return {
         base: path.dirname(resolved),
-        content: await fs.readFile(resolved, 'utf-8'),
+        content: await fs.readFile(resolved, 'utf-8')
       }
-    },
+    }
   }
 }
 

@@ -1,5 +1,3 @@
-import type { TailwindContext } from './types'
-
 // ─── Public types ───
 
 export interface ArrayClassItem {
@@ -25,10 +23,7 @@ export interface ArrayClassItem {
  * Returns the value with plain/keyed items sorted by Tailwind order,
  * dynamic items staying in place as barriers.
  */
-export function sortArrayClassValue(
-  value: string,
-  sortFn: (classes: string) => string,
-): string {
+export function sortArrayClassValue(value: string, sortFn: (classes: string) => string): string {
   // Must start with {[ and end with ]}
   if (!value.startsWith('{[') || !value.endsWith(']}')) return value
 
@@ -39,7 +34,7 @@ export function sortArrayClassValue(
   if (items.length === 0) return value
 
   // Check if there are any static items to sort
-  const hasStatic = items.some(it => it.type !== 'dynamic')
+  const hasStatic = items.some((it) => it.type !== 'dynamic')
   if (!hasStatic) return value
 
   // Split items into groups separated by dynamic barriers.
@@ -65,7 +60,7 @@ export function sortArrayClassValue(
   // Sort each group's class names independently
   const sortedGroups: ArrayClassItem[][] = []
   for (const group of groups) {
-    const groupClasses = group.items.map(it => it.className!)
+    const groupClasses = group.items.map((it) => it.className!)
     const groupSortedStr = sortFn(groupClasses.join(' '))
     const groupSorted = groupSortedStr.split(/\s+/).filter(Boolean)
 
@@ -89,12 +84,12 @@ export function sortArrayClassValue(
       const cls = item.className!
       const indices = groupClassToIdx.get(cls)
       const offset = groupConsumed.get(cls) ?? 0
-      const sortIdx = indices ? indices[offset] ?? indices.length : Infinity
+      const sortIdx = indices ? (indices[offset] ?? indices.length) : Infinity
       groupConsumed.set(cls, offset + 1)
       groupOrder.push({ item, sortIdx })
     }
     groupOrder.sort((a, b) => a.sortIdx - b.sortIdx)
-    sortedGroups.push(groupOrder.map(o => o.item))
+    sortedGroups.push(groupOrder.map((o) => o.item))
   }
 
   // Reassemble: interleave sorted groups with dynamic items in original positions
@@ -128,7 +123,7 @@ export function sortArrayClassValue(
 
   // Fix trailing separators: preserve original separator pattern but assign to new positions
   // Save original separators from items array
-  const originalSeps = items.map(it => it.trailingSep)
+  const originalSeps = items.map((it) => it.trailingSep)
 
   // Reassign separators: positional (separator i goes to result position i)
   for (let i = 0; i < result.length; i++) {
@@ -194,8 +189,16 @@ function splitTopLevel(input: string): { content: string; trailingSep: string }[
       continue
     }
 
-    if (ch === '(' || ch === '[') { depth++; current += ch; continue }
-    if ((ch === ')' || ch === ']') && depth > 0) { depth--; current += ch; continue }
+    if (ch === '(' || ch === '[') {
+      depth++
+      current += ch
+      continue
+    }
+    if ((ch === ')' || ch === ']') && depth > 0) {
+      depth--
+      current += ch
+      continue
+    }
 
     if (ch === ',' && depth === 0) {
       // Capture trailing separator: comma + whitespace
@@ -243,7 +246,7 @@ function classifyItem(trimmed: string, trailingSep: string): ArrayClassItem {
         className,
         condition,
         quoted,
-        trailingSep,
+        trailingSep
       }
     }
 
@@ -270,7 +273,7 @@ function classifyItem(trimmed: string, trailingSep: string): ArrayClassItem {
       raw: trimmed,
       className,
       quoted,
-      trailingSep,
+      trailingSep
     }
   }
 
@@ -284,17 +287,14 @@ function classifyItem(trimmed: string, trailingSep: string): ArrayClassItem {
  */
 function extractClassName(value: string): string | null {
   // Quoted string: 'btn' or "btn"
-  if (
-    (value.startsWith("'") && value.endsWith("'")) ||
-    (value.startsWith('"') && value.endsWith('"'))
-  ) {
+  if ((value.startsWith("'") && value.endsWith("'")) || (value.startsWith('"') && value.endsWith('"'))) {
     if (value.length < 2) return null
     return value.slice(1, -1)
   }
 
   // Bare identifier: must not start with $ and must look like a CSS class
   // CSS class names: letters, digits, hyphens, underscores, colons (TW modifiers), slashes, dots, brackets
-  if (/^[a-zA-Z_\-][a-zA-Z0-9_\-:/.[\]!@#%]*$/.test(value)) {
+  if (/^[a-zA-Z_-][a-zA-Z0-9_:/.[\]!@#%-]*$/.test(value)) {
     return value
   }
 
@@ -328,7 +328,7 @@ function isDynamic(value: string): boolean {
  * Bare identifiers like `btn`, `flex`, `sm:text-lg`, `w-1/2`, `bg-red-500/50`.
  */
 function isCssClassName(value: string): boolean {
-  return /^[a-zA-Z_\-][a-zA-Z0-9_\-:/.[\]!@#%]*$/.test(value)
+  return /^[a-zA-Z_-][a-zA-Z0-9_:/.[\]!@#%-]*$/.test(value)
 }
 
 /**
@@ -348,9 +348,18 @@ function findTopLevelFatArrow(s: string): number {
       continue
     }
 
-    if (ch === "'" || ch === '"') { inString = ch; continue }
-    if (ch === '(' || ch === '[') { depth++; continue }
-    if ((ch === ')' || ch === ']') && depth > 0) { depth--; continue }
+    if (ch === "'" || ch === '"') {
+      inString = ch
+      continue
+    }
+    if (ch === '(' || ch === '[') {
+      depth++
+      continue
+    }
+    if ((ch === ')' || ch === ']') && depth > 0) {
+      depth--
+      continue
+    }
 
     if (ch === '=' && s[i + 1] === '>' && depth === 0) {
       // Make sure it's not inside ==>, i.e. preceded by = or >

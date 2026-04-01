@@ -5,7 +5,7 @@ import {
   extractPrimaryProperty,
   getClassSortInfo,
   parsePropertyOrderConfig,
-  UNSPECIFIED_IGNORE,
+  UNSPECIFIED_IGNORE
 } from '../src/property-order'
 import type { DesignSystemForPropertyOrder } from '../src/property-order'
 
@@ -20,7 +20,7 @@ describe('parsePropertyOrderConfig', () => {
   it('parses stylelint-order format: [items, secondaryOptions]', () => {
     const result = parsePropertyOrderConfig([
       ['display', 'position', 'width'],
-      { unspecified: 'top', severity: 'warning' },
+      { unspecified: 'top', severity: 'warning' }
     ])
     expect(result).toEqual({ properties: ['display', 'position', 'width'], unspecified: 'top' })
   })
@@ -28,7 +28,7 @@ describe('parsePropertyOrderConfig', () => {
   it('parses grouped objects with properties', () => {
     const result = parsePropertyOrderConfig([
       { groupName: 'Layout', properties: ['display', 'flex'] },
-      { groupName: 'Size', properties: ['width', 'height'] },
+      { groupName: 'Size', properties: ['width', 'height'] }
     ])
     expect(result).toEqual({ properties: ['display', 'flex', 'width', 'height'], unspecified: 'bottom' })
   })
@@ -37,7 +37,7 @@ describe('parsePropertyOrderConfig', () => {
     const result = parsePropertyOrderConfig([
       'position',
       { groupName: 'Box', properties: ['display', 'width'] },
-      'color',
+      'color'
     ])
     expect(result).toEqual({ properties: ['position', 'display', 'width', 'color'], unspecified: 'bottom' })
   })
@@ -45,21 +45,15 @@ describe('parsePropertyOrderConfig', () => {
   it('parses stylelint config with rules', () => {
     const result = parsePropertyOrderConfig({
       rules: {
-        'order/properties-order': [
-          ['display', 'width'],
-          { unspecified: 'bottomAlphabetical' },
-        ],
-      },
+        'order/properties-order': [['display', 'width'], { unspecified: 'bottomAlphabetical' }]
+      }
     })
     expect(result).toEqual({ properties: ['display', 'width'], unspecified: 'bottomAlphabetical' })
   })
 
   it('parses flat stylelint config (no rules wrapper)', () => {
     const result = parsePropertyOrderConfig({
-      'order/properties-order': [
-        ['display', 'width'],
-        { unspecified: 'ignore' },
-      ],
+      'order/properties-order': [['display', 'width'], { unspecified: 'ignore' }]
     })
     expect(result).toEqual({ properties: ['display', 'width'], unspecified: 'ignore' })
   })
@@ -91,21 +85,29 @@ describe('extractPrimaryProperty', () => {
   })
 
   it('skips --tw-* custom properties', () => {
-    const ast = [[
-      { kind: 'declaration', property: '--tw-shadow' },
-      { kind: 'declaration', property: 'box-shadow' },
-    ]]
+    const ast = [
+      [
+        { kind: 'declaration', property: '--tw-shadow' },
+        { kind: 'declaration', property: 'box-shadow' }
+      ]
+    ]
     expect(extractPrimaryProperty(ast as any)).toBe('box-shadow')
   })
 
   it('traverses nested rules', () => {
-    const ast = [[{
-      kind: 'rule',
-      nodes: [{
-        kind: 'rule',
-        nodes: [{ kind: 'declaration', property: 'width' }],
-      }],
-    }]]
+    const ast = [
+      [
+        {
+          kind: 'rule',
+          nodes: [
+            {
+              kind: 'rule',
+              nodes: [{ kind: 'declaration', property: 'width' }]
+            }
+          ]
+        }
+      ]
+    ]
     expect(extractPrimaryProperty(ast as any)).toBe('width')
   })
 
@@ -119,11 +121,13 @@ describe('extractPrimaryProperty', () => {
   })
 
   it('returns first non-tw property from multi-property utility', () => {
-    const ast = [[
-      { kind: 'declaration', property: '--tw-font-size' },
-      { kind: 'declaration', property: 'font-size' },
-      { kind: 'declaration', property: 'line-height' },
-    ]]
+    const ast = [
+      [
+        { kind: 'declaration', property: '--tw-font-size' },
+        { kind: 'declaration', property: 'font-size' },
+        { kind: 'declaration', property: 'line-height' }
+      ]
+    ]
     expect(extractPrimaryProperty(ast as any)).toBe('font-size')
   })
 })
@@ -137,7 +141,7 @@ describe('computeVariantKey', () => {
 
   const variantOrderMap = new Map<any, number>([
     [variantA, 15],
-    [variantB, 24],
+    [variantB, 24]
   ])
 
   it('returns -1 for no variants', () => {
@@ -171,50 +175,49 @@ describe('createPropertyOrderContext', () => {
     const variantMd = { kind: 'static', name: 'md' }
 
     const astMap: Record<string, any[][]> = {
-      'flex': [[{ kind: 'declaration', property: 'display' }]],
+      flex: [[{ kind: 'declaration', property: 'display' }]],
       'w-5': [[{ kind: 'declaration', property: 'width' }]],
       'p-4': [[{ kind: 'declaration', property: 'padding' }]],
-      'text-lg': [[
-        { kind: 'declaration', property: '--tw-font-size' },
-        { kind: 'declaration', property: 'font-size' },
-        { kind: 'declaration', property: 'line-height' },
-      ]],
+      'text-lg': [
+        [
+          { kind: 'declaration', property: '--tw-font-size' },
+          { kind: 'declaration', property: 'font-size' },
+          { kind: 'declaration', property: 'line-height' }
+        ]
+      ],
       'md:flex': [[{ kind: 'rule', nodes: [{ kind: 'declaration', property: 'display' }] }]],
       'md:w-5': [[{ kind: 'rule', nodes: [{ kind: 'declaration', property: 'width' }] }]],
       'hover:flex': [[{ kind: 'declaration', property: 'display' }]],
-      'unknown-class': [[]],
+      'unknown-class': [[]]
     }
 
     const candidateMap: Record<string, any[]> = {
-      'flex': [{ root: 'flex', variants: [], important: false }],
+      flex: [{ root: 'flex', variants: [], important: false }],
       'w-5': [{ root: 'w-5', variants: [], important: false }],
       'p-4': [{ root: 'p-4', variants: [], important: false }],
       'text-lg': [{ root: 'text-lg', variants: [], important: false }],
       'md:flex': [{ root: 'flex', variants: [variantMd], important: false }],
       'md:w-5': [{ root: 'w-5', variants: [variantMd], important: false }],
       'hover:flex': [{ root: 'flex', variants: [variantHover], important: false }],
-      'unknown-class': [],
+      'unknown-class': []
     }
 
     const variantOrderMap = new Map<any, number>([
       [variantHover, 15],
-      [variantMd, 24],
+      [variantMd, 24]
     ])
 
     return {
-      candidatesToAst: (classes) => classes.map(c => astMap[c]?.[0] ?? []),
+      candidatesToAst: (classes) => classes.map((c) => astMap[c]?.[0] ?? []),
       parseCandidate: (candidate) => candidateMap[candidate] ?? [],
       getVariantOrder: () => variantOrderMap,
-      getVariants: () => [{ name: 'hover' }, { name: 'md' }],
+      getVariants: () => [{ name: 'hover' }, { name: 'md' }]
     }
   }
 
   it('creates context with correct property order map', () => {
     const ds = mockDesignSystem()
-    const ctx = createPropertyOrderContext(
-      { properties: ['display', 'width', 'padding'], unspecified: 'bottom' },
-      ds,
-    )
+    const ctx = createPropertyOrderContext({ properties: ['display', 'width', 'padding'], unspecified: 'bottom' }, ds)
     expect(ctx.propertyOrderMap.get('display')).toBe(0)
     expect(ctx.propertyOrderMap.get('width')).toBe(1)
     expect(ctx.propertyOrderMap.get('padding')).toBe(2)
@@ -222,10 +225,7 @@ describe('createPropertyOrderContext', () => {
 
   it('getClassSortInfo returns correct info for base class', () => {
     const ds = mockDesignSystem()
-    const ctx = createPropertyOrderContext(
-      { properties: ['display', 'width', 'padding'], unspecified: 'bottom' },
-      ds,
-    )
+    const ctx = createPropertyOrderContext({ properties: ['display', 'width', 'padding'], unspecified: 'bottom' }, ds)
     const info = getClassSortInfo('flex', ctx)
     expect(info.variantKey).toBe(-1)
     expect(info.propIndex).toBe(0) // display → index 0
@@ -233,10 +233,7 @@ describe('createPropertyOrderContext', () => {
 
   it('getClassSortInfo returns correct info for variant class', () => {
     const ds = mockDesignSystem()
-    const ctx = createPropertyOrderContext(
-      { properties: ['display', 'width', 'padding'], unspecified: 'bottom' },
-      ds,
-    )
+    const ctx = createPropertyOrderContext({ properties: ['display', 'width', 'padding'], unspecified: 'bottom' }, ds)
     const info = getClassSortInfo('md:flex', ctx)
     expect(info.variantKey).toBe(24) // md variant order
     expect(info.propIndex).toBe(0) // display → index 0
@@ -244,10 +241,7 @@ describe('createPropertyOrderContext', () => {
 
   it('getClassSortInfo caches results', () => {
     const ds = mockDesignSystem()
-    const ctx = createPropertyOrderContext(
-      { properties: ['display', 'width'], unspecified: 'bottom' },
-      ds,
-    )
+    const ctx = createPropertyOrderContext({ properties: ['display', 'width'], unspecified: 'bottom' }, ds)
     const info1 = getClassSortInfo('flex', ctx)
     const info2 = getClassSortInfo('flex', ctx)
     expect(info1).toBe(info2) // Same reference
@@ -255,40 +249,28 @@ describe('createPropertyOrderContext', () => {
 
   it('unspecified class gets bottom position', () => {
     const ds = mockDesignSystem()
-    const ctx = createPropertyOrderContext(
-      { properties: ['display'], unspecified: 'bottom' },
-      ds,
-    )
+    const ctx = createPropertyOrderContext({ properties: ['display'], unspecified: 'bottom' }, ds)
     const info = getClassSortInfo('w-5', ctx) // width not in config
     expect(info.propIndex).toBe(999_000) // UNSPECIFIED_BOTTOM
   })
 
   it('unspecified class gets top position with unspecified=top', () => {
     const ds = mockDesignSystem()
-    const ctx = createPropertyOrderContext(
-      { properties: ['display'], unspecified: 'top' },
-      ds,
-    )
+    const ctx = createPropertyOrderContext({ properties: ['display'], unspecified: 'top' }, ds)
     const info = getClassSortInfo('w-5', ctx)
     expect(info.propIndex).toBe(-1)
   })
 
   it('unspecified=ignore returns special UNSPECIFIED_IGNORE value', () => {
     const ds = mockDesignSystem()
-    const ctx = createPropertyOrderContext(
-      { properties: ['display'], unspecified: 'ignore' },
-      ds,
-    )
+    const ctx = createPropertyOrderContext({ properties: ['display'], unspecified: 'ignore' }, ds)
     const info = getClassSortInfo('w-5', ctx)
     expect(info.propIndex).toBe(UNSPECIFIED_IGNORE)
   })
 
   it('unknown class (no AST output) gets unspecified position', () => {
     const ds = mockDesignSystem()
-    const ctx = createPropertyOrderContext(
-      { properties: ['display', 'width'], unspecified: 'bottom' },
-      ds,
-    )
+    const ctx = createPropertyOrderContext({ properties: ['display', 'width'], unspecified: 'bottom' }, ds)
     const info = getClassSortInfo('unknown-class', ctx)
     expect(info.propIndex).toBe(999_000)
   })

@@ -4,25 +4,24 @@ import type { TailwindContext } from '../src/types'
 
 function mockContext(order: Record<string, bigint>): TailwindContext {
   return {
-    getClassOrder: (classList: string[]) =>
-      classList.map((c): [string, bigint | null] => [c, order[c] ?? null]),
+    getClassOrder: (classList: string[]) => classList.map((c): [string, bigint | null] => [c, order[c] ?? null])
   }
 }
 
 // Sort order: unknown(null) < flex(10) < block(20) < hidden(30) < active(50)
 // < w-5(100) < h-5(110) < text-left(200) < text-sm(210) < mt-1(300) < mb-2(310)
 const ctx = mockContext({
-  'flex': 10n,
-  'block': 20n,
-  'hidden': 30n,
-  'active': 50n,
-  'inactive': 60n,
+  flex: 10n,
+  block: 20n,
+  hidden: 30n,
+  active: 50n,
+  inactive: 60n,
   'w-5': 100n,
   'h-5': 110n,
   'text-left': 200n,
   'text-sm': 210n,
   'mt-1': 300n,
-  'mb-2': 310n,
+  'mb-2': 310n
 })
 
 const defaults = {}
@@ -86,7 +85,7 @@ describe('parseNClass', () => {
   })
 
   it('skips ?-> (null-safe)', () => {
-    const r = parseNClass("$obj?->method()")
+    const r = parseNClass('$obj?->method()')
     expect(r.tokens).toHaveLength(1)
     expect(r.tokens[0].sortable).toBe(false) // dynamic
   })
@@ -138,8 +137,8 @@ describe('sortNClassValue — token-level sorting', () => {
   })
 
   it('sorts bare identifiers', () => {
-    const result = sortNClassValue("text-left, w-5, foo", ctx, defaults)
-    expect(result).toBe("foo, w-5, text-left")
+    const result = sortNClassValue('text-left, w-5, foo', ctx, defaults)
+    expect(result).toBe('foo, w-5, text-left')
   })
 
   it('does not reorder across barriers', () => {

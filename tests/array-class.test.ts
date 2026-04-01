@@ -1,28 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import {
-  parseArrayClass,
-  serializeArrayClass,
-  sortArrayClassValue,
-  type ArrayClassItem,
-} from '../src/array-class'
-
-// ─── Helper: mock sortFn that sorts alphabetically ───
-
-function alphabeticalSortFn(classes: string): string {
-  return classes.split(/\s+/).filter(Boolean).sort().join(' ')
-}
+import { parseArrayClass, serializeArrayClass, sortArrayClassValue, type ArrayClassItem } from '../src/array-class'
 
 // ─── Helper: mock sortFn simulating Tailwind order ───
 // Uses a predefined order map; unknown classes go first (like null bigint)
 
 const TW_ORDER: Record<string, number> = {
   // Layout
-  'container': 1,
-  'block': 2,
-  'inline': 3,
-  'flex': 4,
-  'grid': 5,
-  'hidden': 6,
+  container: 1,
+  block: 2,
+  inline: 3,
+  flex: 4,
+  grid: 5,
+  hidden: 6,
   // Flexbox
   'items-center': 10,
   'justify-center': 11,
@@ -51,19 +40,19 @@ const TW_ORDER: Record<string, number> = {
   'bg-blue-500': 60,
   'bg-red-500': 61,
   // Border
-  'rounded': 70,
+  rounded: 70,
   'rounded-lg': 71,
-  'border': 72,
+  border: 72,
   // Effects
-  'shadow': 80,
+  shadow: 80,
   'shadow-lg': 81,
   'opacity-50': 82,
   // Transitions
-  'transition': 90,
+  transition: 90,
   'duration-200': 91,
   // Hover
   'hover:bg-blue-600': 100,
-  'hover:text-white': 101,
+  'hover:text-white': 101
 }
 
 function tailwindSortFn(classes: string): string {
@@ -112,13 +101,13 @@ describe('parseArrayClass', () => {
       type: 'keyed',
       className: 'active',
       condition: '$isActive',
-      quoted: false,
+      quoted: false
     })
     expect(items[1]).toMatchObject({
       type: 'keyed',
       className: 'hidden',
       condition: '$isHidden',
-      quoted: false,
+      quoted: false
     })
   })
 
@@ -129,13 +118,13 @@ describe('parseArrayClass', () => {
       type: 'keyed',
       className: 'text-red-500',
       condition: '$hasError',
-      quoted: true,
+      quoted: true
     })
     expect(items[1]).toMatchObject({
       type: 'keyed',
       className: 'font-bold',
       condition: 'true',
-      quoted: true,
+      quoted: true
     })
   })
 
@@ -201,17 +190,17 @@ describe('parseArrayClass', () => {
   })
 
   it('handles method call as keyed condition', () => {
-    const items = parseArrayClass("active => $obj->isActive(), hidden => !$show")
+    const items = parseArrayClass('active => $obj->isActive(), hidden => !$show')
     expect(items).toHaveLength(2)
     expect(items[0]).toMatchObject({
       type: 'keyed',
       className: 'active',
-      condition: '$obj->isActive()',
+      condition: '$obj->isActive()'
     })
     expect(items[1]).toMatchObject({
       type: 'keyed',
       className: 'hidden',
-      condition: '!$show',
+      condition: '!$show'
     })
   })
 
@@ -229,7 +218,7 @@ describe('serializeArrayClass', () => {
   it('serializes plain items', () => {
     const items: ArrayClassItem[] = [
       { type: 'plain', raw: 'btn', className: 'btn', quoted: false, trailingSep: ', ' },
-      { type: 'plain', raw: 'flex', className: 'flex', quoted: false, trailingSep: '' },
+      { type: 'plain', raw: 'flex', className: 'flex', quoted: false, trailingSep: '' }
     ]
     expect(serializeArrayClass(items)).toBe('btn, flex')
   })
@@ -237,7 +226,7 @@ describe('serializeArrayClass', () => {
   it('serializes quoted items', () => {
     const items: ArrayClassItem[] = [
       { type: 'plain', raw: "'btn'", className: 'btn', quoted: true, trailingSep: ', ' },
-      { type: 'plain', raw: "'flex'", className: 'flex', quoted: true, trailingSep: '' },
+      { type: 'plain', raw: "'flex'", className: 'flex', quoted: true, trailingSep: '' }
     ]
     expect(serializeArrayClass(items)).toBe("'btn', 'flex'")
   })
@@ -245,7 +234,7 @@ describe('serializeArrayClass', () => {
   it('serializes keyed items', () => {
     const items: ArrayClassItem[] = [
       { type: 'keyed', raw: 'active => $x', className: 'active', condition: '$x', quoted: false, trailingSep: ', ' },
-      { type: 'keyed', raw: "'hidden' => $y", className: 'hidden', condition: '$y', quoted: true, trailingSep: '' },
+      { type: 'keyed', raw: "'hidden' => $y", className: 'hidden', condition: '$y', quoted: true, trailingSep: '' }
     ]
     expect(serializeArrayClass(items)).toBe("active => $x, 'hidden' => $y")
   })
@@ -254,7 +243,7 @@ describe('serializeArrayClass', () => {
     const items: ArrayClassItem[] = [
       { type: 'plain', raw: 'btn', className: 'btn', quoted: false, trailingSep: ', ' },
       { type: 'dynamic', raw: '$dyn', trailingSep: ', ' },
-      { type: 'plain', raw: 'flex', className: 'flex', quoted: false, trailingSep: '' },
+      { type: 'plain', raw: 'flex', className: 'flex', quoted: false, trailingSep: '' }
     ]
     expect(serializeArrayClass(items)).toBe('btn, $dyn, flex')
   })
@@ -262,7 +251,7 @@ describe('serializeArrayClass', () => {
   it('preserves custom separators', () => {
     const items: ArrayClassItem[] = [
       { type: 'plain', raw: 'btn', className: 'btn', quoted: false, trailingSep: ',  ' },
-      { type: 'plain', raw: 'flex', className: 'flex', quoted: false, trailingSep: '' },
+      { type: 'plain', raw: 'flex', className: 'flex', quoted: false, trailingSep: '' }
     ]
     expect(serializeArrayClass(items)).toBe('btn,  flex')
   })
@@ -282,27 +271,21 @@ describe('sortArrayClassValue', () => {
   })
 
   it('sorts keyed items by class name', () => {
-    const result = sortArrayClassValue(
-      "{[flex => $a, block => $b, grid => $c]}",
-      tailwindSortFn,
-    )
+    const result = sortArrayClassValue('{[flex => $a, block => $b, grid => $c]}', tailwindSortFn)
     expect(result).toBe('{[block => $b, flex => $a, grid => $c]}')
   })
 
   it('preserves keyed pair atomicity', () => {
     const result = sortArrayClassValue(
       "{['font-bold' => $bold, 'flex' => $isFlex, 'block' => $isBlock]}",
-      tailwindSortFn,
+      tailwindSortFn
     )
     // block (2) < flex (4) < font-bold (43)
     expect(result).toBe("{['block' => $isBlock, 'flex' => $isFlex, 'font-bold' => $bold]}")
   })
 
   it('keeps dynamic items in place as barriers', () => {
-    const result = sortArrayClassValue(
-      '{[flex, block, $dyn, grid, hidden]}',
-      tailwindSortFn,
-    )
+    const result = sortArrayClassValue('{[flex, block, $dyn, grid, hidden]}', tailwindSortFn)
     // Group 1: flex, block → sorted: block, flex
     // Barrier: $dyn
     // Group 2: grid, hidden → sorted: grid, hidden (already sorted)
@@ -310,10 +293,7 @@ describe('sortArrayClassValue', () => {
   })
 
   it('keeps dynamic items in place — groups sorted independently', () => {
-    const result = sortArrayClassValue(
-      '{[grid, flex, $dyn, hidden, block]}',
-      tailwindSortFn,
-    )
+    const result = sortArrayClassValue('{[grid, flex, $dyn, hidden, block]}', tailwindSortFn)
     // Group 1: grid, flex → sorted: flex, grid
     // Barrier: $dyn
     // Group 2: hidden, block → sorted: block, hidden
@@ -321,18 +301,12 @@ describe('sortArrayClassValue', () => {
   })
 
   it('handles spread as dynamic barrier', () => {
-    const result = sortArrayClassValue(
-      '{[flex, block, ...$extra, grid, hidden]}',
-      tailwindSortFn,
-    )
+    const result = sortArrayClassValue('{[flex, block, ...$extra, grid, hidden]}', tailwindSortFn)
     expect(result).toBe('{[block, flex, ...$extra, grid, hidden]}')
   })
 
   it('sorts mixed plain and keyed items', () => {
-    const result = sortArrayClassValue(
-      "{[flex, 'font-bold' => $bold, block]}",
-      tailwindSortFn,
-    )
+    const result = sortArrayClassValue("{[flex, 'font-bold' => $bold, block]}", tailwindSortFn)
     // All three are static: block (2), flex (4), font-bold (43)
     expect(result).toBe("{[block, flex, 'font-bold' => $bold]}")
   })
@@ -358,10 +332,7 @@ describe('sortArrayClassValue', () => {
 
   it('unknown classes go first (null bigint behavior)', () => {
     // 'custom-class' is not in TW_ORDER → gets -1 (first)
-    const result = sortArrayClassValue(
-      '{[flex, custom-class, block]}',
-      tailwindSortFn,
-    )
+    const result = sortArrayClassValue('{[flex, custom-class, block]}', tailwindSortFn)
     // custom-class (-1) < block (2) < flex (4)
     expect(result).toBe('{[custom-class, block, flex]}')
   })
@@ -390,10 +361,7 @@ describe('sortArrayClassValue', () => {
   })
 
   it('handles multiple dynamic barriers', () => {
-    const result = sortArrayClassValue(
-      '{[grid, flex, $a, hidden, block, $b, shadow, rounded]}',
-      tailwindSortFn,
-    )
+    const result = sortArrayClassValue('{[grid, flex, $a, hidden, block, $b, shadow, rounded]}', tailwindSortFn)
     // Group 1: grid, flex → flex, grid
     // Barrier: $a
     // Group 2: hidden, block → block, hidden
@@ -403,18 +371,12 @@ describe('sortArrayClassValue', () => {
   })
 
   it('handles keyed pair with complex condition', () => {
-    const result = sortArrayClassValue(
-      "{['font-bold' => ($count > 5), 'flex' => $show]}",
-      tailwindSortFn,
-    )
+    const result = sortArrayClassValue("{['font-bold' => ($count > 5), 'flex' => $show]}", tailwindSortFn)
     expect(result).toBe("{['flex' => $show, 'font-bold' => ($count > 5)]}")
   })
 
   it('handles all keyed items', () => {
-    const result = sortArrayClassValue(
-      '{[shadow => $a, flex => $b, block => $c]}',
-      tailwindSortFn,
-    )
+    const result = sortArrayClassValue('{[shadow => $a, flex => $b, block => $c]}', tailwindSortFn)
     expect(result).toBe('{[block => $c, flex => $b, shadow => $a]}')
   })
 
@@ -427,19 +389,13 @@ describe('sortArrayClassValue', () => {
   it('handles keyed pair where condition contains array access with fat arrow inside brackets', () => {
     // The top-level => should be found correctly even when the condition
     // contains => inside bracket expressions like $arr['key']
-    const result = sortArrayClassValue(
-      "{['font-bold' => $arr['key'], 'flex' => $show]}",
-      tailwindSortFn,
-    )
+    const result = sortArrayClassValue("{['font-bold' => $arr['key'], 'flex' => $show]}", tailwindSortFn)
     expect(result).toBe("{['flex' => $show, 'font-bold' => $arr['key']]}")
   })
 
   it('does not deduplicate classes (duplicate class names with different conditions are valid)', () => {
     // A non-deduplicating sortFn is required for array class
-    const result = sortArrayClassValue(
-      "{['flex' => $a, 'block' => $b, 'flex' => $c]}",
-      tailwindSortFn,
-    )
+    const result = sortArrayClassValue("{['flex' => $a, 'block' => $b, 'flex' => $c]}", tailwindSortFn)
     // block (2) < flex (4) < flex (4) — both flex items preserved
     expect(result).toBe("{['block' => $b, 'flex' => $a, 'flex' => $c]}")
   })

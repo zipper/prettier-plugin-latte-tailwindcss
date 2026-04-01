@@ -33,11 +33,7 @@ export interface ParsedNClass {
  * 2. Sort sortable tokens within groups separated by barrier tokens
  * 3. Reassemble with whitespace handled per tailwindNclassWhitespace option
  */
-export function sortNClassValue(
-  value: string,
-  context: TailwindContext | null,
-  options: LatteOptions,
-): string {
+export function sortNClassValue(value: string, context: TailwindContext | null, options: LatteOptions): string {
   if (!context) return value
   if (!value.trim()) return value
 
@@ -45,7 +41,7 @@ export function sortNClassValue(
   if (parsed.tokens.length === 0) return value
 
   // Save original positional separators before tokens are reordered
-  const originalSeps = parsed.tokens.map(t => t.trailingSep)
+  const originalSeps = parsed.tokens.map((t) => t.trailingSep)
 
   // 1. Sort classes WITHIN each token (branches, multi-class quoted strings)
   for (const token of parsed.tokens) {
@@ -98,9 +94,21 @@ export function parseNClass(value: string): ParsedNClass {
       continue
     }
 
-    if (ch === "'") { inString = true; current += ch; continue }
-    if (ch === '(' || ch === '[') { depth++; current += ch; continue }
-    if ((ch === ')' || ch === ']') && depth > 0) { depth--; current += ch; continue }
+    if (ch === "'") {
+      inString = true
+      current += ch
+      continue
+    }
+    if (ch === '(' || ch === '[') {
+      depth++
+      current += ch
+      continue
+    }
+    if ((ch === ')' || ch === ']') && depth > 0) {
+      depth--
+      current += ch
+      continue
+    }
 
     if (ch === ',' && depth === 0) {
       const trimmed = current.trim()
@@ -129,7 +137,7 @@ export function parseNClass(value: string): ParsedNClass {
 export function serializeNClass(
   parsed: ParsedNClass,
   originalSeps: string[],
-  mode: 'preserve' | 'normalize-barriers' | 'normalize',
+  mode: 'preserve' | 'normalize-barriers' | 'normalize'
 ): string {
   const { prefix, tokens, suffix } = parsed
   if (tokens.length === 0) return prefix + suffix
@@ -152,7 +160,7 @@ export function serializeNClass(
         case 'normalize-barriers': {
           // Normalize within sortable groups; preserve at group boundaries and after barriers
           const bothSortable = tokens[i].sortable && tokens[i + 1]?.sortable
-          result += bothSortable ? ', ' : (originalSeps[i] || ', ')
+          result += bothSortable ? ', ' : originalSeps[i] || ', '
           break
         }
       }
@@ -210,9 +218,18 @@ function findTopLevelQuestion(s: string): number {
       continue
     }
 
-    if (ch === "'") { inString = true; continue }
-    if (ch === '(' || ch === '[') { depth++; continue }
-    if ((ch === ')' || ch === ']') && depth > 0) { depth--; continue }
+    if (ch === "'") {
+      inString = true
+      continue
+    }
+    if (ch === '(' || ch === '[') {
+      depth++
+      continue
+    }
+    if ((ch === ')' || ch === ']') && depth > 0) {
+      depth--
+      continue
+    }
 
     if (ch === '?' && depth === 0) {
       // Skip ?-> (null-safe property access)
@@ -247,13 +264,25 @@ function findTopLevelColon(s: string, startPos: number): number {
       continue
     }
 
-    if (ch === "'") { inString = true; continue }
-    if (ch === '(' || ch === '[') { depth++; continue }
-    if ((ch === ')' || ch === ']') && depth > 0) { depth--; continue }
+    if (ch === "'") {
+      inString = true
+      continue
+    }
+    if (ch === '(' || ch === '[') {
+      depth++
+      continue
+    }
+    if ((ch === ')' || ch === ']') && depth > 0) {
+      depth--
+      continue
+    }
 
     if (ch === ':' && depth === 0) {
       // Skip :: (namespace separator)
-      if (s[i + 1] === ':') { i++; continue }
+      if (s[i + 1] === ':') {
+        i++
+        continue
+      }
 
       // Skip ?: — lookback through whitespace for ?
       let j = i - 1
@@ -270,14 +299,10 @@ function findTopLevelColon(s: string, startPos: number): number {
 // ─── Internal class sorting within tokens ───
 
 /** Sort classes inside a token's quoted strings and conditional branches. */
-function sortTokenInternalClasses(
-  token: NClassToken,
-  context: TailwindContext,
-  options: LatteOptions,
-): void {
+function sortTokenInternalClasses(token: NClassToken, context: TailwindContext, options: LatteOptions): void {
   const sortOpts = {
     removeDuplicates: !options.tailwindPreserveDuplicates,
-    preserveWhitespace: options.tailwindPreserveWhitespace,
+    preserveWhitespace: options.tailwindPreserveWhitespace
   }
   const content = token.content
 
@@ -314,7 +339,7 @@ function sortTokenInternalClasses(
 function sortBranch(
   branch: string,
   context: TailwindContext,
-  sortOpts: { removeDuplicates?: boolean; preserveWhitespace?: boolean },
+  sortOpts: { removeDuplicates?: boolean; preserveWhitespace?: boolean }
 ): string {
   // Quoted string — sort inner classes if multi-class
   if (branch.startsWith("'") && branch.endsWith("'") && branch.length >= 2) {
@@ -356,16 +381,11 @@ function sortTokenGroups(tokens: NClassToken[], context: TailwindContext): void 
 }
 
 /** Sort a contiguous group of sortable tokens by Tailwind order. */
-function sortGroup(
-  tokens: NClassToken[],
-  start: number,
-  end: number,
-  context: TailwindContext,
-): void {
+function sortGroup(tokens: NClassToken[], start: number, end: number, context: TailwindContext): void {
   if (end - start <= 1) return
 
   const group = tokens.slice(start, end)
-  const classNames = group.map(t => t.sortKey)
+  const classNames = group.map((t) => t.sortKey)
 
   if (context.propertyOrder) {
     // Custom property ordering
@@ -374,7 +394,7 @@ function sortGroup(
     const indices = order.map(([name, twBigint], i) => ({
       i,
       twBigint,
-      ...getClassSortInfo(name, propCtx),
+      ...getClassSortInfo(name, propCtx)
     }))
 
     indices.sort((a, b) => {

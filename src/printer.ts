@@ -8,5 +8,5 @@ export const printer: Printer<LatteAstNode> = {
   print(path): Doc {
     const node = path.getValue() as LatteAstNode
     return node.body
-  },
+  }
 }

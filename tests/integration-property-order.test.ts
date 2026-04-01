@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import {
-  createPropertyOrderContext,
-  getClassSortInfo,
-} from '../src/property-order'
-import type { DesignSystemForPropertyOrder, PropertyOrderContext } from '../src/property-order'
+import { createPropertyOrderContext } from '../src/property-order'
+import type { DesignSystemForPropertyOrder } from '../src/property-order'
 import { sortClasses, sortClassList } from '../src/sorting'
 import { sortNClassValue } from '../src/nclass'
 import type { TailwindContext, LatteOptions } from '../src/types'
@@ -20,10 +17,10 @@ function createMockDesignSystem(): {
 
   // CSS property → AST node
   const classPropertyMap: Record<string, string> = {
-    'flex': 'display',
-    'block': 'display',
-    'hidden': 'display',
-    'inline': 'display',
+    flex: 'display',
+    block: 'display',
+    hidden: 'display',
+    inline: 'display',
     'justify-center': 'justify-content',
     'justify-between': 'justify-content',
     'items-center': 'align-items',
@@ -47,17 +44,17 @@ function createMockDesignSystem(): {
     'text-blue-500': 'color',
     'bg-white': 'background-color',
     'bg-red-500': 'background-color',
-    'border': 'border-width',
-    'rounded': 'border-radius',
-    'shadow-lg': 'box-shadow',
+    border: 'border-width',
+    rounded: 'border-radius',
+    'shadow-lg': 'box-shadow'
   }
 
   // TW bigint order — simulates Tailwind's native ordering
   const twOrder: Record<string, bigint> = {
-    'flex': 10n,
-    'block': 11n,
-    'hidden': 12n,
-    'inline': 13n,
+    flex: 10n,
+    block: 11n,
+    hidden: 12n,
+    inline: 13n,
     'justify-center': 50n,
     'justify-between': 51n,
     'items-center': 60n,
@@ -81,9 +78,9 @@ function createMockDesignSystem(): {
     'text-blue-500': 501n,
     'bg-white': 600n,
     'bg-red-500': 601n,
-    'border': 700n,
-    'rounded': 710n,
-    'shadow-lg': 800n,
+    border: 700n,
+    rounded: 710n,
+    'shadow-lg': 800n
   }
 
   // Add variant classes with offset
@@ -97,13 +94,13 @@ function createMockDesignSystem(): {
   const variantOrderMap = new Map<any, number>([
     [variantHover, 15],
     [variantFocus, 17],
-    [variantMd, 24],
+    [variantMd, 24]
   ])
 
   function parseVariants(className: string): { root: string; variants: any[] } {
     const parts = className.split(':')
     const root = parts.pop()!
-    const variants = parts.map(name => {
+    const variants = parts.map((name) => {
       if (name === 'hover') return variantHover
       if (name === 'md') return variantMd
       if (name === 'focus') return variantFocus
@@ -113,24 +110,24 @@ function createMockDesignSystem(): {
   }
 
   const ds: DesignSystemForPropertyOrder = {
-    candidatesToAst: (classes) => classes.map(cls => {
-      const { root } = parseVariants(cls)
-      const prop = classPropertyMap[root]
-      if (!prop) return []
-      return [{ kind: 'declaration', property: prop }]
-    }),
+    candidatesToAst: (classes) =>
+      classes.map((cls) => {
+        const { root } = parseVariants(cls)
+        const prop = classPropertyMap[root]
+        if (!prop) return []
+        return [{ kind: 'declaration', property: prop }]
+      }),
     parseCandidate: (candidate) => {
       const { root, variants } = parseVariants(candidate)
       if (!classPropertyMap[root] && !twOrder[candidate]) return []
       return [{ root, variants, important: false }]
     },
     getVariantOrder: () => variantOrderMap,
-    getVariants: () => [{ name: 'hover' }, { name: 'focus' }, { name: 'md' }],
+    getVariants: () => [{ name: 'hover' }, { name: 'focus' }, { name: 'md' }]
   }
 
   const context: TailwindContext = {
-    getClassOrder: (classList) =>
-      classList.map((c): [string, bigint | null] => [c, twOrder[c] ?? null]),
+    getClassOrder: (classList) => classList.map((c): [string, bigint | null] => [c, twOrder[c] ?? null])
   }
 
   return { ds, context }
@@ -157,17 +154,14 @@ const propertyOrder = [
   'background-color',
   'border-width',
   'border-radius',
-  'box-shadow',
+  'box-shadow'
 ]
 
 function createContextWithPropertyOrder(
-  unspecified: 'top' | 'bottom' | 'bottomAlphabetical' | 'ignore' = 'bottom',
+  unspecified: 'top' | 'bottom' | 'bottomAlphabetical' | 'ignore' = 'bottom'
 ): TailwindContext {
   const { ds, context } = createMockDesignSystem()
-  context.propertyOrder = createPropertyOrderContext(
-    { properties: propertyOrder, unspecified },
-    ds,
-  )
+  context.propertyOrder = createPropertyOrderContext({ properties: propertyOrder, unspecified }, ds)
   return context
 }
 
@@ -220,7 +214,7 @@ describe('property ordering — sortClasses', () => {
   it('preserves duplicates when configured', () => {
     const ctx = createContextWithPropertyOrder()
     const result = sortClasses('flex w-5 flex p-4', ctx, {
-      removeDuplicates: false,
+      removeDuplicates: false
     })
     expect(result).toBe('flex flex w-5 p-4')
   })
@@ -251,31 +245,25 @@ describe('property ordering — sortNClassValue', () => {
   const opts: LatteOptions = {
     tailwindPreserveWhitespace: false,
     tailwindPreserveDuplicates: false,
-    tailwindNclassWhitespace: 'normalize-barriers',
+    tailwindNclassWhitespace: 'normalize-barriers'
   }
 
   it('sorts sortable tokens by property order', () => {
     const ctx = createContextWithPropertyOrder()
-    const result = sortNClassValue("p-4, flex, w-5", ctx, opts)
+    const result = sortNClassValue('p-4, flex, w-5', ctx, opts)
     expect(result).toBe('flex, w-5, p-4')
   })
 
   it('groups variants together in n:class', () => {
     const ctx = createContextWithPropertyOrder()
-    const result = sortNClassValue("md:w-5, flex, md:flex, w-5", ctx, opts)
+    const result = sortNClassValue('md:w-5, flex, md:flex, w-5', ctx, opts)
     expect(result).toBe('flex, w-5, md:flex, md:w-5')
   })
 
   it('preserves barrier tokens position', () => {
     const ctx = createContextWithPropertyOrder()
-    const result = sortNClassValue(
-      "p-4, flex, $condition ? 'active' : 'inactive', w-5, gap-4",
-      ctx,
-      opts,
-    )
-    expect(result).toBe(
-      "flex, p-4, $condition ? 'active' : 'inactive', gap-4, w-5",
-    )
+    const result = sortNClassValue("p-4, flex, $condition ? 'active' : 'inactive', w-5, gap-4", ctx, opts)
+    expect(result).toBe("flex, p-4, $condition ? 'active' : 'inactive', gap-4, w-5")
   })
 })
 
@@ -290,10 +278,7 @@ describe('property ordering — unspecified modes', () => {
   it('unspecified=top places unknown properties before all configured', () => {
     // Create context with minimal config — only 'width'
     const { ds, context } = createMockDesignSystem()
-    context.propertyOrder = createPropertyOrderContext(
-      { properties: ['width'], unspecified: 'top' },
-      ds,
-    )
+    context.propertyOrder = createPropertyOrderContext({ properties: ['width'], unspecified: 'top' }, ds)
     // flex maps to 'display' which is NOT in config → top
     // w-5 maps to 'width' which IS in config → position 0
     const result = sortClasses('w-5 flex', context)

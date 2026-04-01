@@ -16,7 +16,7 @@ export interface ClassMatch {
 // ─── Constants ───
 
 /** Placeholder prefix used by preprocessLatte */
-const PLACEHOLDER_PREFIX = '__LP_'
+const _PLACEHOLDER_PREFIX = '__LP_'
 /** Total length of a placeholder: __LP_ (5) + 16 hex chars + __ (2) = 23 */
 const PLACEHOLDER_LENGTH = 23
 
@@ -27,12 +27,12 @@ function isTagNameChar(ch: string): boolean {
   // a-z, A-Z, 0-9, '-', '_', '.', ':'
   return (
     (c >= 97 && c <= 122) || // a-z
-    (c >= 65 && c <= 90) ||  // A-Z
-    (c >= 48 && c <= 57) ||  // 0-9
+    (c >= 65 && c <= 90) || // A-Z
+    (c >= 48 && c <= 57) || // 0-9
     c === 45 || // -
     c === 95 || // _
     c === 46 || // .
-    c === 58    // :
+    c === 58 // :
   )
 }
 
@@ -41,11 +41,11 @@ function isAttrNameChar(ch: string): boolean {
   // letters, digits, '-', ':', '_'
   return (
     (c >= 97 && c <= 122) || // a-z
-    (c >= 65 && c <= 90) ||  // A-Z
-    (c >= 48 && c <= 57) ||  // 0-9
+    (c >= 65 && c <= 90) || // A-Z
+    (c >= 48 && c <= 57) || // 0-9
     c === 45 || // -
     c === 58 || // :
-    c === 95    // _
+    c === 95 // _
   )
 }
 
@@ -75,10 +75,7 @@ function isAlpha(ch: string): boolean {
  * - Attributes inside Latte tags (placeholders)
  * - Unquoted attribute values
  */
-export function extractClassAttributes(
-  code: string,
-  tailwindAttributes: string[],
-): ClassMatch[] {
+export function extractClassAttributes(code: string, tailwindAttributes: string[]): ClassMatch[] {
   const matches: ClassMatch[] = []
   const len = code.length
   let i = 0
@@ -88,24 +85,13 @@ export function extractClassAttributes(
 
   while (i < len) {
     // Skip placeholders anywhere in the text
-    if (
-      code[i] === '_' &&
-      code[i + 1] === '_' &&
-      code[i + 2] === 'L' &&
-      code[i + 3] === 'P' &&
-      code[i + 4] === '_'
-    ) {
+    if (code[i] === '_' && code[i + 1] === '_' && code[i + 2] === 'L' && code[i + 3] === 'P' && code[i + 4] === '_') {
       i += PLACEHOLDER_LENGTH
       continue
     }
 
     // Detect HTML comment: <!-- ... -->
-    if (
-      code[i] === '<' &&
-      code[i + 1] === '!' &&
-      code[i + 2] === '-' &&
-      code[i + 3] === '-'
-    ) {
+    if (code[i] === '<' && code[i + 1] === '!' && code[i + 2] === '-' && code[i + 3] === '-') {
       i = skipHtmlComment(code, i, len)
       continue
     }
@@ -113,7 +99,10 @@ export function extractClassAttributes(
     // Detect start of HTML tag
     if (code[i] === '<') {
       const nextCh = code[i + 1]
-      if (nextCh === undefined) { i++; continue }
+      if (nextCh === undefined) {
+        i++
+        continue
+      }
 
       // Opening tag: <letter or </letter
       const isClosing = nextCh === '/'
@@ -166,7 +155,7 @@ function scanTagAttributes(
   pos: number,
   len: number,
   twAttrSet: Set<string>,
-  matches: ClassMatch[],
+  matches: ClassMatch[]
 ): number {
   let i = pos
 
@@ -180,13 +169,7 @@ function scanTagAttributes(
     if (code[i] === '/' && code[i + 1] === '>') return i + 2
 
     // Skip placeholders inside tags
-    if (
-      code[i] === '_' &&
-      code[i + 1] === '_' &&
-      code[i + 2] === 'L' &&
-      code[i + 3] === 'P' &&
-      code[i + 4] === '_'
-    ) {
+    if (code[i] === '_' && code[i + 1] === '_' && code[i + 2] === 'L' && code[i + 3] === 'P' && code[i + 4] === '_') {
       i += PLACEHOLDER_LENGTH
       continue
     }
@@ -240,14 +223,14 @@ function scanTagAttributes(
           offset: valueStart,
           length: valueEnd - valueStart,
           value,
-          type: 'class',
+          type: 'class'
         })
       } else if (attrName === 'n:class') {
         matches.push({
           offset: valueStart,
           length: valueEnd - valueStart,
           value,
-          type: 'n:class',
+          type: 'n:class'
         })
       } else if (twAttrSet.has(attrName)) {
         matches.push({
@@ -255,7 +238,7 @@ function scanTagAttributes(
           length: valueEnd - valueStart,
           value,
           type: 'tailwind-attribute',
-          attributeName: attrName,
+          attributeName: attrName
         })
       }
     } else if (quoteChar === '{' && code[i + 1] === '[') {
@@ -288,7 +271,7 @@ function scanTagAttributes(
           offset: bracketStart,
           length: i - bracketStart,
           value,
-          type: 'array-class',
+          type: 'array-class'
         })
       }
     } else {
