@@ -6,19 +6,18 @@ import type { TailwindContext } from '../src/types'
 // < w-5(100) < text-sm(200) < mt-1(300) < mb-2(310)
 function mockContext(order: Record<string, bigint>): TailwindContext {
   return {
-    getClassOrder: (classList: string[]) =>
-      classList.map((c): [string, bigint | null] => [c, order[c] ?? null]),
+    getClassOrder: (classList: string[]) => classList.map((c): [string, bigint | null] => [c, order[c] ?? null])
   }
 }
 
 const ctx = mockContext({
-  'flex': 10n,
-  'block': 20n,
-  'hidden': 30n,
+  flex: 10n,
+  block: 20n,
+  hidden: 30n,
   'w-5': 100n,
   'text-sm': 200n,
   'mt-1': 300n,
-  'mb-2': 310n,
+  'mb-2': 310n
 })
 
 // ─── sortClassList ───

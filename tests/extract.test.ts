@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extractClassAttributes, type ClassMatch } from '../src/extract'
+import { extractClassAttributes } from '../src/extract'
 
 describe('extractClassAttributes', () => {
   it('finds basic class="..."', () => {
@@ -8,7 +8,7 @@ describe('extractClassAttributes', () => {
     expect(matches).toHaveLength(1)
     expect(matches[0]).toMatchObject({
       type: 'class',
-      value: 'flex items-center',
+      value: 'flex items-center'
     })
     expect(code.slice(matches[0].offset, matches[0].offset + matches[0].length)).toBe('flex items-center')
   })
@@ -19,7 +19,7 @@ describe('extractClassAttributes', () => {
     expect(matches).toHaveLength(1)
     expect(matches[0]).toMatchObject({
       type: 'class',
-      value: 'mt-4 p-2',
+      value: 'mt-4 p-2'
     })
   })
 
@@ -29,7 +29,7 @@ describe('extractClassAttributes', () => {
     expect(matches).toHaveLength(1)
     expect(matches[0]).toMatchObject({
       type: 'n:class',
-      value: 'btn, flex, $active ? active',
+      value: 'btn, flex, $active ? active'
     })
   })
 
@@ -39,7 +39,7 @@ describe('extractClassAttributes', () => {
     expect(matches).toHaveLength(1)
     expect(matches[0]).toMatchObject({
       type: 'array-class',
-      value: '{[btn, flex, active]}',
+      value: '{[btn, flex, active]}'
     })
   })
 
@@ -50,7 +50,7 @@ describe('extractClassAttributes', () => {
     expect(matches[0]).toMatchObject({
       type: 'tailwind-attribute',
       value: 'p-4 m-2',
-      attributeName: 'my-class',
+      attributeName: 'my-class'
     })
   })
 
@@ -71,7 +71,7 @@ describe('extractClassAttributes', () => {
     expect(matches).toHaveLength(1)
     expect(matches[0]).toMatchObject({
       type: 'class',
-      value: 'flex',
+      value: 'flex'
     })
   })
 
@@ -96,7 +96,7 @@ describe('extractClassAttributes', () => {
     expect(matches).toHaveLength(1)
     expect(matches[0]).toMatchObject({
       type: 'class',
-      value: 'visible',
+      value: 'visible'
     })
   })
 
@@ -106,16 +106,16 @@ describe('extractClassAttributes', () => {
     expect(matches).toHaveLength(1)
     expect(matches[0]).toMatchObject({
       type: 'class',
-      value: 'w-full h-auto',
+      value: 'w-full h-auto'
     })
   })
 
-  it('handles nested brackets in array class: class={[\'a\', $cond ? \'b\' : \'c\']}', () => {
+  it("handles nested brackets in array class: class={['a', $cond ? 'b' : 'c']}", () => {
     const code = "<div class={['a', $cond ? 'b' : 'c']}>text</div>"
     const matches = extractClassAttributes(code, [])
     expect(matches).toHaveLength(1)
     expect(matches[0]).toMatchObject({
-      type: 'array-class',
+      type: 'array-class'
     })
     expect(matches[0].value).toContain("{['a', $cond ? 'b' : 'c']}")
   })
@@ -127,7 +127,7 @@ describe('extractClassAttributes', () => {
     expect(matches).toHaveLength(1)
     expect(matches[0]).toMatchObject({
       type: 'class',
-      value: 'real',
+      value: 'real'
     })
   })
 
@@ -137,7 +137,7 @@ describe('extractClassAttributes', () => {
     expect(matches).toHaveLength(1)
     expect(matches[0]).toMatchObject({
       type: 'class',
-      value: 'visible',
+      value: 'visible'
     })
   })
 
@@ -147,7 +147,7 @@ describe('extractClassAttributes', () => {
     expect(matches).toHaveLength(1)
     expect(matches[0]).toMatchObject({
       type: 'class',
-      value: 'flex',
+      value: 'flex'
     })
   })
 

@@ -77,8 +77,8 @@ describe('preprocessLatte — round-trip invariant', () => {
     ['nested braces', '<div>{foreach $items as $item}{$item}{/foreach}</div>'],
     ['contentType tag', '{contentType xml}<root></root>'],
     ['debugbreak tag', '{debugbreak}<div></div>'],
-    ['n:class with expressions', '<div n:class="$x ? \'active\', \'flex\'">text</div>'],
-    ['multiple Latte constructs', '{var $x = 1}<div class="{$x}">text</div>{* comment *}'],
+    ['n:class with expressions', "<div n:class=\"$x ? 'active', 'flex'\">text</div>"],
+    ['multiple Latte constructs', '{var $x = 1}<div class="{$x}">text</div>{* comment *}']
   ]
 
   for (const [name, input] of invariantCases) {
@@ -127,7 +127,7 @@ describe('preprocessLatte — edge cases', () => {
 
   it('placeholder length is exactly 23 characters (__LP_ + 16 hex + __)', () => {
     const input = '{$x}'
-    const { code, map } = preprocessLatte(input)
+    const { code: _code, map } = preprocessLatte(input)
     const ph = [...map.keys()][0]
     // Format: __LP_ (5) + 16 hex digits + __ (2) = 23
     expect(ph).toMatch(/^__LP_[0-9a-f]{16}__$/)

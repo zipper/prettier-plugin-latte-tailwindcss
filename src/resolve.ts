@@ -9,7 +9,7 @@ const esmResolver = ResolverFactory.createResolver({
   useSyncFileSystemCalls: true,
   extensions: ['.mjs', '.js'],
   mainFields: ['module'],
-  conditionNames: ['node', 'import'],
+  conditionNames: ['node', 'import']
 })
 
 const cjsResolver = ResolverFactory.createResolver({
@@ -17,7 +17,7 @@ const cjsResolver = ResolverFactory.createResolver({
   useSyncFileSystemCalls: true,
   extensions: ['.js', '.cjs'],
   mainFields: ['main'],
-  conditionNames: ['node', 'require'],
+  conditionNames: ['node', 'require']
 })
 
 const cssResolver = ResolverFactory.createResolver({
@@ -25,7 +25,7 @@ const cssResolver = ResolverFactory.createResolver({
   useSyncFileSystemCalls: true,
   extensions: ['.css'],
   mainFields: ['style'],
-  conditionNames: ['style'],
+  conditionNames: ['style']
 })
 
 /** Resolve a JS/TS module — ESM first, fallback to CJS */

@@ -75,10 +75,7 @@ describe('applyClassRegex', () => {
 
   it('combination of simple + tuple patterns', () => {
     const code = 'cls="mt-2 flex" clsx("z-10 block")'
-    const json = JSON.stringify([
-      '"([^"]+)"',
-      ['clsx\\(([^)]+)\\)', '"([^"]+)"'],
-    ])
+    const json = JSON.stringify(['"([^"]+)"', ['clsx\\(([^)]+)\\)', '"([^"]+)"']])
     const patterns = parseClassRegexPatterns(json)
     const result = applyClassRegex(code, patterns, sortFn)
     // Simple pattern sorts both quoted strings, tuple pattern also targets clsx content
@@ -96,8 +93,7 @@ describe('applyClassRegex', () => {
   it('multiline match (dotAll flag)', () => {
     const code = `$x = "mt-2\nflex\nblock";`
     // dotAll flag allows . to match newlines; use whitespace-aware sort
-    const multiSortFn = (classes: string): string =>
-      classes.split(/\s+/).sort().join(' ')
+    const multiSortFn = (classes: string): string => classes.split(/\s+/).sort().join(' ')
     const patterns = parseClassRegexPatterns('["\\"([^\\"]+)\\""]')
     const result = applyClassRegex(code, patterns, multiSortFn)
     expect(result).toBe('$x = "block flex mt-2";')
@@ -125,9 +121,13 @@ describe('isUnsafePattern', () => {
   })
 
   it('allows safe patterns', () => {
-    expect(_isUnsafePattern(String.raw`[cC]lass:\s*?["'` + "`" + String.raw`]([^"'` + "`" + String.raw`]*)`)).toBe(false)
+    expect(_isUnsafePattern(String.raw`[cC]lass:\s*?["'` + '`' + String.raw`]([^"'` + '`' + String.raw`]*)`)).toBe(
+      false
+    )
     expect(_isUnsafePattern(String.raw`n:class="([^"]*)"`)).toBe(false)
-    expect(_isUnsafePattern(String.raw`\$\w*[cC]lass\w*\s*=\s*["'` + "`" + String.raw`]([^"'` + "`" + String.raw`]*)`)).toBe(false)
+    expect(
+      _isUnsafePattern(String.raw`\$\w*[cC]lass\w*\s*=\s*["'` + '`' + String.raw`]([^"'` + '`' + String.raw`]*)`)
+    ).toBe(false)
   })
 })
 
@@ -136,10 +136,12 @@ describe('isUnsafePattern', () => {
 describe('dangerous pattern handling', () => {
   it('warns and skips patterns with [\\s\\S]*', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const patterns = parseClassRegexPatterns(JSON.stringify([
-      String.raw`n:class=["']([\s\S]*)["']`,
-      '"([^"]*)"', // safe pattern
-    ]))
+    const patterns = parseClassRegexPatterns(
+      JSON.stringify([
+        String.raw`n:class=["']([\s\S]*)["']`,
+        '"([^"]*)"' // safe pattern
+      ])
+    )
     expect(patterns).toHaveLength(1) // only safe pattern kept
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('Skipping dangerous classRegex'))
     warn.mockRestore()
@@ -147,9 +149,9 @@ describe('dangerous pattern handling', () => {
 
   it('warns and skips patterns with \\$(?:.*)', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const patterns = parseClassRegexPatterns(JSON.stringify([
-      String.raw`\$(?:.*)[cC]lass(?:Name)?\s*?=\s*?["']([^"']*)`,
-    ]))
+    const patterns = parseClassRegexPatterns(
+      JSON.stringify([String.raw`\$(?:.*)[cC]lass(?:Name)?\s*?=\s*?["']([^"']*)`])
+    )
     expect(patterns).toHaveLength(0)
     expect(warn).toHaveBeenCalled()
     warn.mockRestore()
@@ -157,9 +159,14 @@ describe('dangerous pattern handling', () => {
 
   it('also skips unsafe tuple outer patterns', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const patterns = parseClassRegexPatterns(JSON.stringify([
-      [String.raw`n:class=["']([\s\S]*)["']`, String.raw`["'` + "`" + String.raw`]([^"'` + "`" + String.raw`]*)["'` + "`]"],
-    ]))
+    const patterns = parseClassRegexPatterns(
+      JSON.stringify([
+        [
+          String.raw`n:class=["']([\s\S]*)["']`,
+          String.raw`["'` + '`' + String.raw`]([^"'` + '`' + String.raw`]*)["'` + '`]'
+        ]
+      ])
+    )
     expect(patterns).toHaveLength(0)
     expect(warn).toHaveBeenCalled()
     warn.mockRestore()
@@ -191,23 +198,28 @@ describe('capture safety (runtime)', () => {
       "{embed '~card',",
       "\tclass: 'col-start-1 row-span-2',",
       "\tborderRadiusClass: 'sm:rounded-md'}",
-      "\t{block content}",
-      '\t\t<li n:class="\'flex items-center\', $active ? \'font-bold\'">',
+      '\t{block content}',
+      "\t\t<li n:class=\"'flex items-center', $active ? 'font-bold'\">",
       "\t\t\t{embed '~link',",
       "\t\t\t\tclass: 'flex h-full items-center'}",
-      "\t\t\t{/embed}",
-      "\t\t</li>",
-      "\t{/block}",
-      "{/embed}",
+      '\t\t\t{/embed}',
+      '\t\t</li>',
+      '\t{/block}',
+      '{/embed}'
     ].join('\n')
 
     // Apply the old dangerous PhpStorm patterns — unsafe ones get filtered out with warnings
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const dangerousPatterns = parseClassRegexPatterns(JSON.stringify([
-      String.raw`[cC]lass:\s*?["'` + "`" + String.raw`]([^"'` + "`" + String.raw`]*).*?,?`,
-      [String.raw`n:class=["']([\s\S]*)["']`, String.raw`["'` + "`" + String.raw`]([^"'` + "`" + String.raw`]*)["'` + "`]"],
-      String.raw`\$(?:.*)[cC]lass(?:Name)?\s*?=\s*?["']([^"']*)`,
-    ]))
+    const dangerousPatterns = parseClassRegexPatterns(
+      JSON.stringify([
+        String.raw`[cC]lass:\s*?["'` + '`' + String.raw`]([^"'` + '`' + String.raw`]*).*?,?`,
+        [
+          String.raw`n:class=["']([\s\S]*)["']`,
+          String.raw`["'` + '`' + String.raw`]([^"'` + '`' + String.raw`]*)["'` + '`]'
+        ],
+        String.raw`\$(?:.*)[cC]lass(?:Name)?\s*?=\s*?["']([^"']*)`
+      ])
+    )
     // 2 dangerous patterns should have been filtered, leaving only the safe class: pattern
     expect(warn).toHaveBeenCalledTimes(2)
     warn.mockRestore()

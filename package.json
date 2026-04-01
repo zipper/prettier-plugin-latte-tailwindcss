@@ -22,6 +22,7 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests --max-warnings=0",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -51,13 +52,18 @@
     }
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/node": "^4.0.0",
     "@types/node": "^20.0.0",
     "enhanced-resolve": "^5.15.0",
+    "eslint": "^10.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
     "jiti": "^2.6.0",
     "prettier": "^3.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
+    "typescript-eslint": "^8.58.0",
     "vitest": "^2.0.0"
   },
   "engines": {

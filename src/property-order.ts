@@ -70,7 +70,7 @@ export interface ClassSortInfo {
  */
 export async function loadPropertyOrderConfig(
   configPath: string,
-  configDir: string,
+  configDir: string
 ): Promise<{ properties: string[]; unspecified: string } | null> {
   let raw: unknown
   try {
@@ -110,10 +110,7 @@ export async function loadPropertyOrderConfig(
       }
     }
   } catch (err) {
-    console.warn(
-      `[prettier-plugin-latte-tailwind] Failed to load property order config: ${configPath}`,
-      err,
-    )
+    console.warn(`[prettier-plugin-latte-tailwind] Failed to load property order config: ${configPath}`, err)
     return null
   }
 
@@ -123,9 +120,7 @@ export async function loadPropertyOrderConfig(
 /**
  * Parse raw export into a flat property list + unspecified setting.
  */
-export function parsePropertyOrderConfig(
-  raw: unknown,
-): { properties: string[]; unspecified: string } | null {
+export function parsePropertyOrderConfig(raw: unknown): { properties: string[]; unspecified: string } | null {
   // If it's a stylelint config object with rules
   if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
     const obj = raw as Record<string, unknown>
@@ -162,9 +157,7 @@ export function parsePropertyOrderConfig(
  * Parse the value of order/properties-order rule.
  * Format: [items, secondaryOptions?] where items is an array of strings/objects.
  */
-function parsePropertiesOrderRule(
-  value: unknown,
-): { properties: string[]; unspecified: string } | null {
+function parsePropertiesOrderRule(value: unknown): { properties: string[]; unspecified: string } | null {
   if (!Array.isArray(value)) {
     console.warn('[prettier-plugin-latte-tailwind] properties-order must be an array')
     return null
@@ -238,7 +231,7 @@ function flattenPropertyItems(items: unknown[]): string[] {
  */
 export function createPropertyOrderContext(
   config: { properties: string[]; unspecified: string },
-  ds: DesignSystemForPropertyOrder,
+  ds: DesignSystemForPropertyOrder
 ): PropertyOrderContext {
   // Build property → index map
   const propertyOrderMap = new Map<string, number>()
@@ -251,20 +244,20 @@ export function createPropertyOrderContext(
   // Populate variant order map via dummy compilation
   const variants = ds.getVariants()
   if (variants.length > 0) {
-    ds.candidatesToAst(variants.map(v => `${v.name}:flex`))
+    ds.candidatesToAst(variants.map((v) => `${v.name}:flex`))
   }
   const variantOrderMap = ds.getVariantOrder()
 
-  const unspecified = (['top', 'bottom', 'bottomAlphabetical', 'ignore'].includes(config.unspecified)
-    ? config.unspecified
-    : 'bottom') as PropertyOrderContext['unspecified']
+  const unspecified = (
+    ['top', 'bottom', 'bottomAlphabetical', 'ignore'].includes(config.unspecified) ? config.unspecified : 'bottom'
+  ) as PropertyOrderContext['unspecified']
 
   return {
     propertyOrderMap,
     unspecified,
     variantOrderMap,
     ds,
-    classInfoCache: new Map(),
+    classInfoCache: new Map()
   }
 }
 
@@ -309,18 +302,17 @@ function findPropertyInNodes(nodes: AstNode[]): string | null {
  * Classes without variants get -1 (sort first).
  * Multi-variant classes encode variant orders as a composite key.
  */
-export function computeVariantKey(
-  variants: readonly Variant[],
-  variantOrderMap: Map<Variant, number>,
-): number {
+export function computeVariantKey(variants: readonly Variant[], variantOrderMap: Map<Variant, number>): number {
   if (variants.length === 0) return -1
 
   // Sort variant orders for consistent key regardless of order (md:hover == hover:md)
-  const orders = variants.map(v => {
-    const order = variantOrderMap.get(v)
-    // Arbitrary variants (not in map) get high order
-    return order ?? 9998
-  }).sort((a, b) => a - b)
+  const orders = variants
+    .map((v) => {
+      const order = variantOrderMap.get(v)
+      // Arbitrary variants (not in map) get high order
+      return order ?? 9998
+    })
+    .sort((a, b) => a - b)
 
   // Encode as composite number
   let key = 0
@@ -336,10 +328,7 @@ export function computeVariantKey(
  * Get or compute sort info for a class name.
  * Uses cache on PropertyOrderContext.
  */
-export function getClassSortInfo(
-  className: string,
-  ctx: PropertyOrderContext,
-): ClassSortInfo {
+export function getClassSortInfo(className: string, ctx: PropertyOrderContext): ClassSortInfo {
   const cached = ctx.classInfoCache.get(className)
   if (cached) return cached
 
@@ -348,10 +337,7 @@ export function getClassSortInfo(
   return info
 }
 
-function computeClassSortInfo(
-  className: string,
-  ctx: PropertyOrderContext,
-): ClassSortInfo {
+function computeClassSortInfo(className: string, ctx: PropertyOrderContext): ClassSortInfo {
   // Parse candidate to extract variants
   const candidates = ctx.ds.parseCandidate(className)
   const candidate = candidates[0] as Candidate | undefined
@@ -389,10 +375,7 @@ function computeClassSortInfo(
 // Large sentinel for "bottom" positioning
 const UNSPECIFIED_BOTTOM = 999_000
 
-function getUnspecifiedIndex(
-  propertyName: string | null,
-  ctx: PropertyOrderContext,
-): number {
+function getUnspecifiedIndex(propertyName: string | null, ctx: PropertyOrderContext): number {
   switch (ctx.unspecified) {
     case 'top':
       return -1
@@ -403,7 +386,7 @@ function getUnspecifiedIndex(
       if (propertyName) {
         let hash = UNSPECIFIED_BOTTOM
         for (let i = 0; i < Math.min(propertyName.length, 20); i++) {
-          hash += propertyName.charCodeAt(i) / (256 ** (i + 1))
+          hash += propertyName.charCodeAt(i) / 256 ** (i + 1)
         }
         return hash
       }

@@ -3,23 +3,23 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 // Mock all heavy dependencies before importing the module under test
 vi.mock('jiti', () => ({
   createJiti: vi.fn(() => ({
-    import: vi.fn(),
-  })),
+    import: vi.fn()
+  }))
 }))
 
 vi.mock('../src/resolve', () => ({
   resolveJsFrom: vi.fn(),
-  resolveCssFrom: vi.fn(),
+  resolveCssFrom: vi.fn()
 }))
 
 vi.mock('prettier', () => ({
   default: {
-    resolveConfigFile: vi.fn().mockResolvedValue(null),
-  },
+    resolveConfigFile: vi.fn().mockResolvedValue(null)
+  }
 }))
 
 vi.mock('node:fs/promises', () => ({
-  readFile: vi.fn().mockResolvedValue('@import "tailwindcss";'),
+  readFile: vi.fn().mockResolvedValue('@import "tailwindcss";')
 }))
 
 describe('loadTailwindContext', () => {
@@ -41,9 +41,7 @@ describe('loadTailwindContext', () => {
     const result = await loadTailwindContext(undefined, '/test/file.latte')
 
     expect(result).toBeNull()
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('@tailwindcss/node not found'),
-    )
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('@tailwindcss/node not found'))
     consoleSpy.mockRestore()
   })
 
@@ -54,7 +52,7 @@ describe('loadTailwindContext', () => {
     const { createJiti } = await import('jiti')
     vi.mocked(createJiti).mockReturnValue({
       import: vi.fn().mockResolvedValue({ notTheRightExport: true }),
-      esmResolve: vi.fn(),
+      esmResolve: vi.fn()
     } as any)
 
     const { loadTailwindContext } = await import('../src/tailwind')
@@ -63,17 +61,13 @@ describe('loadTailwindContext', () => {
     const result = await loadTailwindContext(undefined, '/test/file.latte')
 
     expect(result).toBeNull()
-    expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('does not export __unstable__loadDesignSystem'),
-    )
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('does not export __unstable__loadDesignSystem'))
     consoleSpy.mockRestore()
   })
 
   it('returns context with getClassOrder when loading succeeds', async () => {
     const mockDesignSystem = {
-      getClassOrder: vi.fn((classes: string[]) =>
-        classes.map((c): [string, bigint | null] => [c, BigInt(0)]),
-      ),
+      getClassOrder: vi.fn((classes: string[]) => classes.map((c): [string, bigint | null] => [c, BigInt(0)]))
     }
 
     const { resolveJsFrom } = await import('../src/resolve')
@@ -82,9 +76,9 @@ describe('loadTailwindContext', () => {
     const { createJiti } = await import('jiti')
     vi.mocked(createJiti).mockReturnValue({
       import: vi.fn().mockResolvedValue({
-        __unstable__loadDesignSystem: vi.fn().mockResolvedValue(mockDesignSystem),
+        __unstable__loadDesignSystem: vi.fn().mockResolvedValue(mockDesignSystem)
       }),
-      esmResolve: vi.fn(),
+      esmResolve: vi.fn()
     } as any)
 
     const { loadTailwindContext } = await import('../src/tailwind')
@@ -104,9 +98,7 @@ describe('loadTailwindContext', () => {
 
   it('caches the context and calls __unstable__loadDesignSystem only once', async () => {
     const mockLoadDesignSystem = vi.fn().mockResolvedValue({
-      getClassOrder: vi.fn((classes: string[]) =>
-        classes.map((c): [string, bigint | null] => [c, BigInt(0)]),
-      ),
+      getClassOrder: vi.fn((classes: string[]) => classes.map((c): [string, bigint | null] => [c, BigInt(0)]))
     })
 
     const { resolveJsFrom } = await import('../src/resolve')
@@ -115,9 +107,9 @@ describe('loadTailwindContext', () => {
     const { createJiti } = await import('jiti')
     vi.mocked(createJiti).mockReturnValue({
       import: vi.fn().mockResolvedValue({
-        __unstable__loadDesignSystem: mockLoadDesignSystem,
+        __unstable__loadDesignSystem: mockLoadDesignSystem
       }),
-      esmResolve: vi.fn(),
+      esmResolve: vi.fn()
     } as any)
 
     const { loadTailwindContext } = await import('../src/tailwind')
@@ -143,9 +135,9 @@ describe('loadTailwindContext', () => {
     const { createJiti } = await import('jiti')
     vi.mocked(createJiti).mockReturnValue({
       import: vi.fn().mockResolvedValue({
-        __unstable__loadDesignSystem: vi.fn().mockRejectedValue(new Error('CSS parse error')),
+        __unstable__loadDesignSystem: vi.fn().mockRejectedValue(new Error('CSS parse error'))
       }),
-      esmResolve: vi.fn(),
+      esmResolve: vi.fn()
     } as any)
 
     const { loadTailwindContext } = await import('../src/tailwind')
@@ -156,7 +148,7 @@ describe('loadTailwindContext', () => {
     expect(result).toBeNull()
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining('Failed to load Tailwind design system'),
-      expect.any(Error),
+      expect.any(Error)
     )
     consoleSpy.mockRestore()
   })

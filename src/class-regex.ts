@@ -48,14 +48,19 @@ function parseClassRegexArray(raw: unknown[]): ClassRegexPattern[] {
           continue
         }
         patterns.push({ regex: new RegExp(item, 'gs') })
-      } else if (Array.isArray(item) && item.length === 2 && typeof item[0] === 'string' && typeof item[1] === 'string') {
+      } else if (
+        Array.isArray(item) &&
+        item.length === 2 &&
+        typeof item[0] === 'string' &&
+        typeof item[1] === 'string'
+      ) {
         if (isUnsafePattern(item[0])) {
           warnUnsafe(item[0])
           continue
         }
         patterns.push({
           outer: new RegExp(item[0], 'gs'),
-          inner: new RegExp(item[1], 'gs'),
+          inner: new RegExp(item[1], 'gs')
         })
       }
     } catch {
@@ -82,8 +87,8 @@ function isUnsafePattern(source: string): boolean {
 function warnUnsafe(source: string): void {
   console.warn(
     `prettier-plugin-latte-tailwind: Skipping dangerous classRegex pattern "${source}" — ` +
-    'unbounded greedy quantifier can match entire file content. ' +
-    'Use bounded patterns like [^"]*  or [^\\]]*  instead.',
+      'unbounded greedy quantifier can match entire file content. ' +
+      'Use bounded patterns like [^"]*  or [^\\]]*  instead.'
   )
 }
 
@@ -104,10 +109,7 @@ export { isUnsafePattern as _isUnsafePattern }
  * Resolve classRegex patterns from explicit config or IDE auto-detection.
  * Priority: explicit .prettierrc > .vscode/settings.json > .idea/tailwindcss.xml > []
  */
-export function resolveClassRegexPatterns(
-  explicitJson: string | undefined,
-  filepath: string,
-): ClassRegexPattern[] {
+export function resolveClassRegexPatterns(explicitJson: string | undefined, filepath: string): ClassRegexPattern[] {
   // Explicit config has highest priority
   if (explicitJson !== undefined && explicitJson !== '') {
     return parseClassRegexPatterns(explicitJson)
@@ -138,7 +140,7 @@ interface Replacement {
 export function applyClassRegex(
   code: string,
   patterns: ClassRegexPattern[],
-  sortFn: (classes: string) => string,
+  sortFn: (classes: string) => string
 ): string {
   const replacements: Replacement[] = []
 
@@ -153,12 +155,7 @@ export function applyClassRegex(
   return applyReplacements(code, replacements)
 }
 
-function collectSimple(
-  code: string,
-  regex: RegExp,
-  sortFn: (classes: string) => string,
-  out: Replacement[],
-): void {
+function collectSimple(code: string, regex: RegExp, sortFn: (classes: string) => string, out: Replacement[]): void {
   // Use 'd' flag for capture group indices when available
   const dRegex = addIndicesFlag(regex)
   dRegex.lastIndex = 0
@@ -173,7 +170,7 @@ function collectSimple(
       out.push({
         start: captureStart,
         end: captureStart + captured.length,
-        replacement: sorted,
+        replacement: sorted
       })
     }
   }
@@ -184,7 +181,7 @@ function collectTuple(
   outer: RegExp,
   inner: RegExp,
   sortFn: (classes: string) => string,
-  out: Replacement[],
+  out: Replacement[]
 ): void {
   outer.lastIndex = 0
   let outerMatch: RegExpExecArray | null
@@ -206,7 +203,7 @@ function collectTuple(
         out.push({
           start: absStart,
           end: absStart + captured.length,
-          replacement: sorted,
+          replacement: sorted
         })
       }
     }

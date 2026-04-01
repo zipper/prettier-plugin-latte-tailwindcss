@@ -18,7 +18,7 @@ function createAlphabeticalContext(): TailwindContext {
         const idx = sorted.indexOf(cls)
         return [cls, BigInt(idx)]
       })
-    },
+    }
   }
 }
 
@@ -28,7 +28,7 @@ const fixturesDir = path.resolve(__dirname, 'fixtures')
 const defaultOpts: LatteOptions = {
   tailwindPreserveWhitespace: false,
   tailwindPreserveDuplicates: false,
-  tailwindNclassWhitespace: 'normalize-barriers',
+  tailwindNclassWhitespace: 'normalize-barriers'
 }
 
 /**
@@ -58,7 +58,7 @@ function formatLatte(input: string): string {
       case 'class':
         replacement = sortClasses(match.value, ctx, {
           removeDuplicates: !defaultOpts.tailwindPreserveDuplicates,
-          preserveWhitespace: defaultOpts.tailwindPreserveWhitespace,
+          preserveWhitespace: defaultOpts.tailwindPreserveWhitespace
         })
         break
 
@@ -70,7 +70,7 @@ function formatLatte(input: string): string {
         const sortFn = (classes: string) =>
           sortClasses(classes, ctx, {
             removeDuplicates: false,
-            preserveWhitespace: false,
+            preserveWhitespace: false
           })
         replacement = sortArrayClassValue(match.value, sortFn)
         break
@@ -79,7 +79,7 @@ function formatLatte(input: string): string {
       case 'tailwind-attribute':
         replacement = sortClasses(match.value, ctx, {
           removeDuplicates: !defaultOpts.tailwindPreserveDuplicates,
-          preserveWhitespace: defaultOpts.tailwindPreserveWhitespace,
+          preserveWhitespace: defaultOpts.tailwindPreserveWhitespace
         })
         break
 
@@ -88,10 +88,7 @@ function formatLatte(input: string): string {
     }
 
     if (replacement !== match.value) {
-      result =
-        result.slice(0, match.offset) +
-        replacement +
-        result.slice(match.offset + match.length)
+      result = result.slice(0, match.offset) + replacement + result.slice(match.offset + match.length)
     }
   }
 
@@ -138,7 +135,7 @@ describe('idempotence — inline inputs', () => {
     ['class with Latte expression', '<a href="{link Home:}" class="mt-4 flex">link</a>\n'],
     ['mixed attrs', `<div class="mt-4 flex" n:class="'block', 'hidden'">mixed</div>\n`],
     ['empty class', '<div class="">empty</div>\n'],
-    ['single class', '<div class="flex">single</div>\n'],
+    ['single class', '<div class="flex">single</div>\n']
   ]
 
   for (const [name, input] of cases) {

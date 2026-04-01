@@ -19,8 +19,8 @@ export const languages = [
     parsers: ['latte'],
     extensions: ['.latte'],
     vscodeLanguageIds: ['latte'],
-    linguistLanguageId: 196,
-  },
+    linguistLanguageId: 196
+  }
 ]
 
 export const parsers: Plugin['parsers'] = {
@@ -33,21 +33,21 @@ export const parsers: Plugin['parsers'] = {
       const ctx = await loadTailwindContext(
         opts.tailwindStylesheet,
         parserOptions.filepath ?? '',
-        opts.tailwindPropertyOrder || undefined,
+        opts.tailwindPropertyOrder || undefined
       )
 
       // Pass 1: classRegex on original text (before preprocess)
       const classRegexPatterns = resolveClassRegexPatterns(
         (opts as any).tailwindClassRegex,
-        parserOptions.filepath ?? '',
+        parserOptions.filepath ?? ''
       )
       let text = code
       if (classRegexPatterns.length > 0 && ctx) {
         text = applyClassRegex(text, classRegexPatterns, (classes) =>
           sortClasses(classes, ctx, {
             removeDuplicates: !opts.tailwindPreserveDuplicates,
-            preserveWhitespace: opts.tailwindPreserveWhitespace,
-          }),
+            preserveWhitespace: opts.tailwindPreserveWhitespace
+          })
         )
       }
 
@@ -67,12 +67,12 @@ export const parsers: Plugin['parsers'] = {
     },
 
     locStart: () => 0,
-    locEnd: (node: any) => (node as LatteAstNode).body.length,
-  },
+    locEnd: (node: any) => (node as LatteAstNode).body.length
+  }
 }
 
 export const printers: Plugin['printers'] = {
-  'latte-ast': printer as any,
+  'latte-ast': printer as any
 }
 
 /**
@@ -83,7 +83,7 @@ function applyClassMatches(
   code: string,
   matches: import('./extract').ClassMatch[],
   ctx: TailwindContext,
-  opts: LatteOptions,
+  opts: LatteOptions
 ): string {
   // Sort matches by offset descending so replacements don't shift earlier offsets
   const sorted = [...matches].sort((a, b) => b.offset - a.offset)
@@ -96,7 +96,7 @@ function applyClassMatches(
       case 'class':
         replacement = sortClasses(match.value, ctx, {
           removeDuplicates: !opts.tailwindPreserveDuplicates,
-          preserveWhitespace: opts.tailwindPreserveWhitespace,
+          preserveWhitespace: opts.tailwindPreserveWhitespace
         })
         break
 
@@ -108,7 +108,7 @@ function applyClassMatches(
         const sortFn = (classes: string) =>
           sortClasses(classes, ctx, {
             removeDuplicates: false,
-            preserveWhitespace: false,
+            preserveWhitespace: false
           })
         replacement = sortArrayClassValue(match.value, sortFn)
         break
@@ -117,7 +117,7 @@ function applyClassMatches(
       case 'tailwind-attribute':
         replacement = sortClasses(match.value, ctx, {
           removeDuplicates: !opts.tailwindPreserveDuplicates,
-          preserveWhitespace: opts.tailwindPreserveWhitespace,
+          preserveWhitespace: opts.tailwindPreserveWhitespace
         })
         break
 
@@ -126,10 +126,7 @@ function applyClassMatches(
     }
 
     if (replacement !== match.value) {
-      result =
-        result.slice(0, match.offset) +
-        replacement +
-        result.slice(match.offset + match.length)
+      result = result.slice(0, match.offset) + replacement + result.slice(match.offset + match.length)
     }
   }
 
