@@ -1,6 +1,10 @@
+import type { PropertyOrderContext } from './property-order'
+
 /** Tailwind context — wraps getClassOrder from @tailwindcss/node */
 export interface TailwindContext {
   getClassOrder(classList: string[]): [string, bigint | null][]
+  /** Custom property ordering context (opt-in, null = use default TW order) */
+  propertyOrder?: PropertyOrderContext
 }
 
 /** Plugin-specific options declared in options.ts */
@@ -11,6 +15,8 @@ export interface LatteOptions {
   tailwindPreserveDuplicates?: boolean
   /** JSON array of classRegex patterns for sorting classes in arbitrary contexts */
   tailwindClassRegex?: string
+  /** Path to a JS/JSON file with stylelint-order compatible property order config */
+  tailwindPropertyOrder?: string
   /** Controls how whitespace separators between n:class tokens are handled when tokens are reordered */
   tailwindNclassWhitespace?: 'preserve' | 'normalize-barriers' | 'normalize'
 }

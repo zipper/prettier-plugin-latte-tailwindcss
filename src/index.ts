@@ -1,6 +1,6 @@
 import type { Plugin } from 'prettier'
 import { sortArrayClassValue } from './array-class'
-import { applyClassRegex, parseClassRegexPatterns } from './class-regex'
+import { applyClassRegex, resolveClassRegexPatterns } from './class-regex'
 import { extractClassAttributes } from './extract'
 import { sortNClassValue } from './nclass'
 import { options as pluginOptions } from './options'
@@ -33,11 +33,14 @@ export const parsers: Plugin['parsers'] = {
       const ctx = await loadTailwindContext(
         opts.tailwindStylesheet,
         parserOptions.filepath ?? '',
+        opts.tailwindPropertyOrder || undefined,
       )
 
       // Pass 1: classRegex on original text (before preprocess)
-      const classRegexJson = (opts as any).tailwindClassRegex ?? '[]'
-      const classRegexPatterns = parseClassRegexPatterns(classRegexJson)
+      const classRegexPatterns = resolveClassRegexPatterns(
+        (opts as any).tailwindClassRegex,
+        parserOptions.filepath ?? '',
+      )
       let text = code
       if (classRegexPatterns.length > 0 && ctx) {
         text = applyClassRegex(text, classRegexPatterns, (classes) =>

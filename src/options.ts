@@ -32,11 +32,20 @@ export const options: Record<string, SupportOption> = {
 
   tailwindClassRegex: {
     type: 'string',
-    default: '[]',
+    default: '',
     category: 'Tailwind CSS',
     description:
       'JSON array of classRegex patterns (compatible with tailwindCSS.experimental.classRegex). ' +
-      'Each item is either a "pattern" string with one capture group, or a ["outerRegex", "innerRegex"] tuple.',
+      'Set to "[]" to disable. If empty, auto-detected from .vscode/settings.json or .idea/tailwindcss.xml.',
+  },
+
+  tailwindPropertyOrder: {
+    type: 'string',
+    default: '',
+    category: 'Tailwind CSS',
+    description:
+      'Path to a JS/JSON file exporting a stylelint-order compatible properties-order array. ' +
+      'Empty string (default) disables custom ordering and uses Tailwind\'s native order.',
   },
 
   tailwindNclassWhitespace: {

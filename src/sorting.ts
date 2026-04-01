@@ -1,3 +1,4 @@
+import { UNSPECIFIED_IGNORE, getClassSortInfo } from './property-order'
 import type { TailwindContext } from './types'
 
 export interface SortOptions {
@@ -73,16 +74,54 @@ export function sortClassList(
 ): { classList: string[]; removedIndices: Set<number> } {
   let orderedClasses = context.getClassOrder(classList)
 
-  orderedClasses.sort(([nameA, a], [nameZ, z]) => {
-    // Dynamic placeholders always last
-    if (nameA === '...' || nameA === '…') return 1
-    if (nameZ === '...' || nameZ === '…') return -1
-    if (a === z) return 0
-    // Unknown classes (null bigint) first
-    if (a === null) return -1
-    if (z === null) return 1
-    return a < z ? -1 : 1
-  })
+  if (context.propertyOrder) {
+    // Custom property ordering: variant → property → TW bigint tiebreaker
+    const propCtx = context.propertyOrder
+    const infos = orderedClasses.map(([name, twBigint]) => ({
+      name,
+      twBigint,
+      ...getClassSortInfo(name, propCtx),
+    }))
+
+    infos.sort((a, b) => {
+      // Dynamic placeholders always last
+      if (a.name === '...' || a.name === '…') return 1
+      if (b.name === '...' || b.name === '…') return -1
+      // Unknown classes (null TW bigint = non-TW) first
+      if (a.twBigint === null && b.twBigint !== null) return -1
+      if (a.twBigint !== null && b.twBigint === null) return 1
+      if (a.twBigint === null && b.twBigint === null) return 0
+      // 1. Variant key
+      if (a.variantKey !== b.variantKey) return a.variantKey - b.variantKey
+      // 2. Property index
+      if (a.propIndex !== b.propIndex) {
+        // 'ignore' mode: use TW bigint for unspecified props
+        if (a.propIndex === UNSPECIFIED_IGNORE && b.propIndex === UNSPECIFIED_IGNORE) {
+          return a.twBigint! < b.twBigint! ? -1 : a.twBigint! > b.twBigint! ? 1 : 0
+        }
+        if (a.propIndex === UNSPECIFIED_IGNORE) return 1
+        if (b.propIndex === UNSPECIFIED_IGNORE) return -1
+        return a.propIndex - b.propIndex
+      }
+      // 3. TW bigint tiebreaker
+      if (a.twBigint === b.twBigint) return 0
+      return a.twBigint! < b.twBigint! ? -1 : 1
+    })
+
+    orderedClasses = infos.map(({ name, twBigint }) => [name, twBigint] as [string, bigint | null])
+  } else {
+    // Default Tailwind ordering
+    orderedClasses.sort(([nameA, a], [nameZ, z]) => {
+      // Dynamic placeholders always last
+      if (nameA === '...' || nameA === '…') return 1
+      if (nameZ === '...' || nameZ === '…') return -1
+      if (a === z) return 0
+      // Unknown classes (null bigint) first
+      if (a === null) return -1
+      if (z === null) return 1
+      return a < z ? -1 : 1
+    })
+  }
 
   const removedIndices = new Set<number>()
 

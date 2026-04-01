@@ -3,11 +3,18 @@ import * as path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { createJiti } from 'jiti'
 import prettier from 'prettier'
+import { createPropertyOrderContext, loadPropertyOrderConfig } from './property-order'
+import type { DesignSystemForPropertyOrder } from './property-order'
 import { resolveCssFrom, resolveJsFrom } from './resolve'
 import type { TailwindContext } from './types'
 
 interface DesignSystem {
   getClassOrder(classList: string[]): [string, bigint | null][]
+  // Methods needed for property ordering (may not exist in older TW4 versions)
+  candidatesToAst?(classes: string[]): unknown[][]
+  parseCandidate?(candidate: string): readonly unknown[]
+  getVariantOrder?(): Map<unknown, number>
+  getVariants?(): { name: string }[]
 }
 
 interface TailwindApi {
@@ -32,6 +39,7 @@ const prettierConfigCache = new Map<string, string>()
 export async function loadTailwindContext(
   stylesheet: string | undefined,
   filepath: string,
+  propertyOrderPath?: string,
 ): Promise<TailwindContext | null> {
   const inputDir = filepath ? path.dirname(filepath) : process.cwd()
   const configDir = await resolvePrettierConfigDir(filepath, inputDir)
@@ -44,12 +52,12 @@ export async function loadTailwindContext(
       : path.resolve(configDir, stylesheet)
   }
 
-  const cacheKey = `${configDir}::${resolvedStylesheet ?? ''}`
+  const cacheKey = `${configDir}::${resolvedStylesheet ?? ''}::${propertyOrderPath ?? ''}`
 
   const cached = contextCache.get(cacheKey)
   if (cached !== undefined) return cached
 
-  const promise = doLoad(resolvedStylesheet, configDir)
+  const promise = doLoad(resolvedStylesheet, configDir, propertyOrderPath)
   contextCache.set(cacheKey, promise)
   return promise
 }
@@ -57,6 +65,7 @@ export async function loadTailwindContext(
 async function doLoad(
   stylesheet: string | undefined,
   configDir: string,
+  propertyOrderPath?: string,
 ): Promise<TailwindContext | null> {
   // Locate @tailwindcss/node in the user's project
   let tailwindPath: string
@@ -125,9 +134,37 @@ async function doLoad(
     return null
   }
 
-  return {
+  const context: TailwindContext = {
     getClassOrder: (classList: string[]) => design.getClassOrder(classList),
   }
+
+  // Load property order config if specified
+  if (propertyOrderPath) {
+    if (
+      typeof design.candidatesToAst !== 'function' ||
+      typeof design.parseCandidate !== 'function' ||
+      typeof design.getVariantOrder !== 'function' ||
+      typeof design.getVariants !== 'function'
+    ) {
+      console.warn(
+        '[prettier-plugin-latte-tailwind] tailwindPropertyOrder requires Tailwind CSS v4 with candidatesToAst API — ' +
+        'custom property ordering disabled.',
+      )
+    } else {
+      const config = await loadPropertyOrderConfig(propertyOrderPath, configDir)
+      if (config) {
+        const ds: DesignSystemForPropertyOrder = {
+          candidatesToAst: (classes) => design.candidatesToAst!(classes) as any,
+          parseCandidate: (candidate) => design.parseCandidate!(candidate) as any,
+          getVariantOrder: () => design.getVariantOrder!() as any,
+          getVariants: () => design.getVariants!() as any,
+        }
+        context.propertyOrder = createPropertyOrderContext(config, ds)
+      }
+    }
+  }
+
+  return context
 }
 
 function createLoader({
