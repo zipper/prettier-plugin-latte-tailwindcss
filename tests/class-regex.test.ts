@@ -185,6 +185,13 @@ describe('capture safety (runtime)', () => {
     expect(result).toBe(code)
   })
 
+  it('allows captures with commas inside arbitrary values', () => {
+    const code = "class: 'flex bg-[rgb(255,0,0)] mt-4'"
+    const patterns = parseClassRegexPatterns(JSON.stringify(["class:\\s*'([^']*)'"]))
+    const result = applyClassRegex(code, patterns, sortFn)
+    expect(result).not.toBe(code)
+  })
+
   it('skips capture groups containing Latte brackets', () => {
     const code = 'class="flex {$var} mt-2"'
     const patterns = parseClassRegexPatterns(JSON.stringify(['"([^"]*)"']))

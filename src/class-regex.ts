@@ -95,11 +95,10 @@ function warnUnsafe(source: string): void {
 /**
  * Runtime safety: skip capture groups that contain structural characters
  * which indicate the regex matched beyond class attribute boundaries.
- * Valid CSS class strings never contain < > { } , (commas indicate
- * inter-token separators were captured instead of class names).
+ * Valid CSS class strings never contain < > { }.
  */
 function isSafeCapture(captured: string): boolean {
-  return !/[<>{},]/.test(captured)
+  return !/[<>{}]/.test(captured)
 }
 
 // Re-export for testing
