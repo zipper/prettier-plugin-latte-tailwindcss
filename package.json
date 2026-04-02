@@ -1,6 +1,6 @@
 {
   "name": "prettier-plugin-latte-tailwindcss",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Prettier plugin for sorting Tailwind CSS v4 classes in Latte v3 templates",
   "type": "module",
   "main": "./dist/index.cjs",
