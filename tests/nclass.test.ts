@@ -84,6 +84,22 @@ describe('parseNClass', () => {
     expect(r.tokens).toHaveLength(2)
   })
 
+  it('handles bare arbitrary value with commas as single token', () => {
+    const r = parseNClass('mt-4, bg-[rgb(255,0,0)], flex')
+    expect(r.tokens).toHaveLength(3)
+    expect(r.tokens[0].content).toBe('mt-4')
+    expect(r.tokens[1].content).toBe('bg-[rgb(255,0,0)]')
+    expect(r.tokens[2].content).toBe('flex')
+  })
+
+  it('handles quoted arbitrary value with commas as single token', () => {
+    const r = parseNClass("'mt-4', 'bg-[rgb(255,0,0)]', 'flex'")
+    expect(r.tokens).toHaveLength(3)
+    expect(r.tokens[1].content).toBe("'bg-[rgb(255,0,0)]'")
+    expect(r.tokens[1].sortable).toBe(true)
+    expect(r.tokens[1].sortKey).toBe('bg-[rgb(255,0,0)]')
+  })
+
   it('skips ?-> (null-safe)', () => {
     const r = parseNClass('$obj?->method()')
     expect(r.tokens).toHaveLength(1)

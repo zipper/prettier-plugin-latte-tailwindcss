@@ -125,7 +125,6 @@ These patterns work fine for IDE IntelliSense (which only reads, never writes) b
 Even if a pattern passes the pattern-level check, each captured string is validated before sorting:
 
 - Captures containing `<`, `>`, `{`, `}` are skipped (HTML/Latte structural characters)
-- Captures containing `,` are skipped (inter-token separators, not class names)
 
 This prevents sorting of accidentally captured file structure.
 
