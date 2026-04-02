@@ -13,7 +13,7 @@ The official `prettier-plugin-tailwindcss` does not support Latte. This plugin f
 npm install -D prettier-plugin-latte-tailwindcss
 ```
 
-Peer dependencies: `prettier >= 3.0.0`. For class sorting, you also need `@tailwindcss/node >= 4.0.0`.
+Peer dependencies: `prettier >= 3.0.0` and `@tailwindcss/node >= 4.0.0`.
 
 Minimal `.prettierrc`:
 

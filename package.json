@@ -44,12 +44,8 @@
     "url": "https://github.com/zipper/prettier-plugin-latte-tailwindcss/issues"
   },
   "peerDependencies": {
-    "prettier": ">=3.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@tailwindcss/node": {
-      "optional": true
-    }
+    "prettier": ">=3.0.0",
+    "@tailwindcss/node": ">=4.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
