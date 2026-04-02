@@ -72,7 +72,7 @@ async function doLoad(
   } catch {
     console.warn(
       '[prettier-plugin-latte-tailwindcss] @tailwindcss/node not found — class sorting disabled.\n' +
-        'Install it: npm install --save-dev @tailwindcss/node'
+        'This is a required peer dependency. Install it: npm install --save-dev @tailwindcss/node'
     )
     return null
   }

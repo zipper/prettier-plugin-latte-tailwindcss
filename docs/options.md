@@ -20,8 +20,6 @@ If omitted, the plugin uses a default `@import "tailwindcss"` internally, which 
 - You use **custom `@source` directives** or theme presets
 - Your CSS entry point imports additional stylesheets that affect class order
 
-If omitted and `@tailwindcss/node` is not installed, class sorting is disabled entirely (the plugin still formats Latte templates).
-
 ## `tailwindClassRegex`
 
 **Type:** `string` &middot; **Default:** `""` (empty &mdash; auto-detect)
