@@ -173,6 +173,43 @@ describe('dangerous pattern handling', () => {
   })
 })
 
+// ─── n:class tuple — non-class content between quotes ───
+
+describe('n:class tuple — non-class captures skipped', () => {
+  // PhpStorm n:class tuple pattern:
+  // outer: n:class="([^"]*)"
+  // inner: ["'`]([^"'`]*)["'`]
+  const nclassTupleJson = JSON.stringify([
+    ['n:class="([^"]*)"', "[\"'`]([^\"'`]*)[\"'`]"]
+  ])
+
+  it('does not damage separators between quoted tokens', () => {
+    const code = `<i n:class="'icon', $isFavorite ? 'icon--heart-solid text-promo-primary' : 'icon--heart-outline','leading-none'" aria-hidden="true"></i>`
+    const patterns = parseClassRegexPatterns(nclassTupleJson)
+    const result = applyClassRegex(code, patterns, sortFn)
+    // The ternary expression and separators between quotes must be preserved
+    expect(result).toContain("$isFavorite ? 'icon--heart-solid text-promo-primary' : 'icon--heart-outline'")
+    expect(result).toContain("'icon',")
+  })
+
+  it('preserves space before quote after ternary ?', () => {
+    const code = `<i n:class="'icon', $isFavorite ? 'active' : 'inactive', 'leading-none'"></i>`
+    const patterns = parseClassRegexPatterns(nclassTupleJson)
+    const result = applyClassRegex(code, patterns, sortFn)
+    // Space after ? and before 'active' must remain
+    expect(result).toContain("? 'active'")
+    // Space after : and before 'inactive' must remain
+    expect(result).toContain(": 'inactive'")
+  })
+
+  it('preserves space around colon in ternary false branch', () => {
+    const code = `<span n:class="$cond ? 'a' : 'b'"></span>`
+    const patterns = parseClassRegexPatterns(nclassTupleJson)
+    const result = applyClassRegex(code, patterns, sortFn)
+    expect(result).toContain("' : '")
+  })
+})
+
 // ─── runtime capture safety ───
 
 describe('capture safety (runtime)', () => {

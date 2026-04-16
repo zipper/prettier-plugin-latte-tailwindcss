@@ -93,12 +93,15 @@ function warnUnsafe(source: string): void {
 }
 
 /**
- * Runtime safety: skip capture groups that contain structural characters
- * which indicate the regex matched beyond class attribute boundaries.
- * Valid CSS class strings never contain < > { }.
+ * Runtime safety: skip capture groups that are not valid class strings.
+ * Rejects captures containing structural characters (< > { }),
+ * PHP variable markers ($), or captures without any word characters
+ * (pure separators like ", " or " : " between quoted tokens).
  */
 function isSafeCapture(captured: string): boolean {
-  return !/[<>{}]/.test(captured)
+  if (/[<>{}$]/.test(captured)) return false
+  if (!/\w/.test(captured)) return false
+  return true
 }
 
 // Re-export for testing
