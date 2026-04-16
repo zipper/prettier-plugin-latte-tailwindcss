@@ -160,7 +160,13 @@ export function serializeNClass(
         case 'normalize-barriers': {
           // Normalize within sortable groups; preserve at group boundaries and after barriers
           const bothSortable = tokens[i].sortable && tokens[i + 1]?.sortable
-          result += bothSortable ? ', ' : originalSeps[i] || ', '
+          if (bothSortable) {
+            result += ', '
+          } else {
+            const sep = originalSeps[i] || ', '
+            // Ensure at least one space after comma at barrier boundaries
+            result += sep === ',' ? ', ' : sep
+          }
           break
         }
       }
@@ -305,23 +311,39 @@ function sortTokenInternalClasses(token: NClassToken, context: TailwindContext, 
     preserveWhitespace: options.tailwindPreserveWhitespace
   }
   const content = token.content
+  const preserveMode = (options.tailwindNclassWhitespace ?? 'normalize-barriers') === 'preserve'
 
   // Conditional: sort classes in true/false branches
   const qPos = findTopLevelQuestion(content)
   if (qPos !== -1) {
-    const condition = content.slice(0, qPos).trimEnd()
-    const afterQ = content.slice(qPos + 1).trimStart()
-    const cPos = findTopLevelColon(afterQ, 0)
+    if (preserveMode) {
+      // Preserve original whitespace around ? and :
+      const beforeQ = content.slice(0, qPos)
+      const afterQ = content.slice(qPos + 1)
+      const cPos = findTopLevelColon(afterQ, 0)
 
-    if (cPos !== -1) {
-      // Ternary: condition ? trueBranch : falseBranch
-      const truePart = afterQ.slice(0, cPos).trim()
-      const falsePart = afterQ.slice(cPos + 1).trim()
-      token.content = `${condition} ? ${sortBranch(truePart, context, sortOpts)} : ${sortBranch(falsePart, context, sortOpts)}`
+      if (cPos !== -1) {
+        const truePart = afterQ.slice(0, cPos)
+        const falsePart = afterQ.slice(cPos + 1)
+        token.content = `${beforeQ}?${sortBranchPreserve(truePart, context, sortOpts)}:${sortBranchPreserve(falsePart, context, sortOpts)}`
+      } else {
+        const truePart = afterQ
+        token.content = `${beforeQ}?${sortBranchPreserve(truePart, context, sortOpts)}`
+      }
     } else {
-      // Conditional with true branch only: condition ? trueBranch
-      const truePart = afterQ.trim()
-      token.content = `${condition} ? ${sortBranch(truePart, context, sortOpts)}`
+      // Normalize whitespace around ? and :
+      const condition = content.slice(0, qPos).trimEnd()
+      const afterQ = content.slice(qPos + 1).trimStart()
+      const cPos = findTopLevelColon(afterQ, 0)
+
+      if (cPos !== -1) {
+        const truePart = afterQ.slice(0, cPos).trim()
+        const falsePart = afterQ.slice(cPos + 1).trim()
+        token.content = `${condition} ? ${sortBranch(truePart, context, sortOpts)} : ${sortBranch(falsePart, context, sortOpts)}`
+      } else {
+        const truePart = afterQ.trim()
+        token.content = `${condition} ? ${sortBranch(truePart, context, sortOpts)}`
+      }
     }
     return
   }
@@ -357,6 +379,23 @@ function sortBranch(
 
   // Single bare class or dynamic — unchanged
   return branch
+}
+
+/** Sort classes within a branch, preserving surrounding whitespace. */
+function sortBranchPreserve(
+  branch: string,
+  context: TailwindContext,
+  sortOpts: { removeDuplicates?: boolean; preserveWhitespace?: boolean }
+): string {
+  // Extract leading/trailing whitespace
+  const leadMatch = branch.match(/^(\s*)/)
+  const trailMatch = branch.match(/(\s*)$/)
+  const lead = leadMatch?.[1] ?? ''
+  const trail = trailMatch?.[1] ?? ''
+  const trimmed = branch.slice(lead.length, branch.length - trail.length)
+  if (!trimmed) return branch
+
+  return lead + sortBranch(trimmed, context, sortOpts) + trail
 }
 
 // ─── Token-level sorting ───

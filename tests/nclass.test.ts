@@ -236,6 +236,27 @@ describe('sortNClassValue — whitespace modes', () => {
     const result = sortNClassValue("\n  'text-left', 'w-5'\n", ctx, defaults)
     expect(result).toBe("\n  'w-5', 'text-left'\n")
   })
+
+  it('normalize-barriers: ensures space after comma at barrier boundaries', () => {
+    // Missing space after barrier: ,'leading-none' → should become , 'leading-none'
+    const result = sortNClassValue("'icon',$bar ? 'h-5','text-sm'", ctx, { tailwindNclassWhitespace: 'normalize-barriers' })
+    expect(result).toBe("'icon', $bar ? 'h-5', 'text-sm'")
+  })
+
+  it('preserve: does NOT add space after comma at barrier boundaries', () => {
+    const result = sortNClassValue("'icon',$bar ? 'h-5','text-sm'", ctx, { tailwindNclassWhitespace: 'preserve' })
+    expect(result).toBe("'icon',$bar ? 'h-5','text-sm'")
+  })
+
+  it('normalize-barriers: normalizes ternary spacing', () => {
+    const result = sortNClassValue("$x ?'active':'inactive'", ctx, { tailwindNclassWhitespace: 'normalize-barriers' })
+    expect(result).toBe("$x ? 'active' : 'inactive'")
+  })
+
+  it('preserve: does NOT normalize ternary spacing', () => {
+    const result = sortNClassValue("$x ?'active':'inactive'", ctx, { tailwindNclassWhitespace: 'preserve' })
+    expect(result).toBe("$x ?'active':'inactive'")
+  })
 })
 
 // ─── Edge cases ───
