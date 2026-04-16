@@ -179,11 +179,6 @@ function classifyToken(content: string, trailingSep: string): NClassToken {
     return { content, trailingSep, sortable: false, sortKey: '' }
   }
 
-  // Dynamic: starts with $ (variable, property chain, method call)
-  if (content.startsWith('$')) {
-    return { content, trailingSep, sortable: false, sortKey: '' }
-  }
-
   // Quoted string
   if (content.startsWith("'") && content.endsWith("'") && content.length >= 2) {
     const inner = content.slice(1, -1)
@@ -193,6 +188,11 @@ function classifyToken(content: string, trailingSep: string): NClassToken {
     }
     // Single-class → sortable
     return { content, trailingSep, sortable: true, sortKey: inner }
+  }
+
+  // Dynamic: contains $ (variable, property chain, method call, concatenation)
+  if (content.includes('$')) {
+    return { content, trailingSep, sortable: false, sortKey: '' }
   }
 
   // Bare identifier → sortable (single CSS class name)

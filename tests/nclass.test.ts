@@ -62,6 +62,12 @@ describe('parseNClass', () => {
     expect(r.tokens[0].sortable).toBe(false)
   })
 
+  it('PHP concatenation with variable is a barrier', () => {
+    const r = parseNClass("'icon--' . \$icon['icon']")
+    expect(r.tokens).toHaveLength(1)
+    expect(r.tokens[0].sortable).toBe(false)
+  })
+
   it('comma-separated tokens with separators', () => {
     const r = parseNClass("'foo', 'bar', 'baz'")
     expect(r.tokens).toHaveLength(3)
@@ -169,6 +175,14 @@ describe('sortNClassValue — token-level sorting', () => {
     // Barrier: $bar ? 'h-5'
     // Group 2: ['text-sm'(210n), 'flex'(10n)] → ['flex', 'text-sm']
     expect(result).toBe("'w-5', 'text-left', $bar ? 'h-5', 'flex', 'text-sm'")
+  })
+
+  it('PHP concatenation acts as barrier', () => {
+    // icon is known (bigint), concatenation is unknown — without barrier, unknown sorts first
+    const ctxWithIcon = mockContext({ flex: 10n, icon: 20n })
+    const result = sortNClassValue("'icon', 'icon--' . \$icon['icon'], 'flex'", ctxWithIcon, defaults)
+    // 'icon' alone before barrier, 'flex' alone after → no token reordering
+    expect(result).toBe("'icon', 'icon--' . \$icon['icon'], 'flex'")
   })
 
   it('multi-class quoted string acts as barrier', () => {
