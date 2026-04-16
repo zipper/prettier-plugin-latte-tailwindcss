@@ -265,6 +265,12 @@ describe('property ordering — sortNClassValue', () => {
     const result = sortNClassValue("p-4, flex, $condition ? 'active' : 'inactive', w-5, gap-4", ctx, opts)
     expect(result).toBe("flex, p-4, $condition ? 'active' : 'inactive', gap-4, w-5")
   })
+
+  it('preserves separator after ternary with multi-class string', () => {
+    const ctx = createContextWithPropertyOrder()
+    const result = sortNClassValue("'flex', $cond ? 'mt-1 mb-2' : 'w-5', 'gap-4'", ctx, opts)
+    expect(result).toContain(", 'gap-4'")
+  })
 })
 
 describe('property ordering — unspecified modes', () => {

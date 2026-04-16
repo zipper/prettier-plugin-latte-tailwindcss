@@ -146,3 +146,13 @@ describe('idempotence — inline inputs', () => {
     })
   }
 })
+
+// ─── n:class separator preservation ───
+
+describe('n:class — separator after ternary barrier', () => {
+  it('preserves space after ternary in n:class', () => {
+    const input = `<i n:class="'icon', $isFavorite ? 'icon--heart-solid text-promo-primary' : 'icon--heart-outline', 'leading-none'"></i>\n`
+    const result = formatLatte(input)
+    expect(result).toContain(", 'leading-none'")
+  })
+})

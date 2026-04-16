@@ -193,6 +193,11 @@ describe('sortNClassValue — token-level sorting', () => {
     expect(result).toBe("'text-left', 'btn flex', 'w-5'")
   })
 
+  it('preserves separator after ternary barrier', () => {
+    const result = sortNClassValue("'icon', $isFavorite ? 'icon--heart-solid text-promo-primary' : 'icon--heart-outline', 'leading-none'", ctx, defaults)
+    expect(result).toBe("'icon', $isFavorite ? 'icon--heart-solid text-promo-primary' : 'icon--heart-outline', 'leading-none'")
+  })
+
   it('unknown classes come first within a group', () => {
     const result = sortNClassValue("'flex', 'custom', 'w-5'", ctx, defaults)
     // custom(null → first), flex(10n), w-5(100n)
