@@ -63,7 +63,7 @@ describe('parseNClass', () => {
   })
 
   it('PHP concatenation with variable is a barrier', () => {
-    const r = parseNClass("'icon--' . \$icon['icon']")
+    const r = parseNClass("'icon--' . $icon['icon']")
     expect(r.tokens).toHaveLength(1)
     expect(r.tokens[0].sortable).toBe(false)
   })
@@ -180,14 +180,18 @@ describe('sortNClassValue — token-level sorting', () => {
   it('PHP concatenation acts as barrier', () => {
     // icon is known (bigint), concatenation is unknown — without barrier, unknown sorts first
     const ctxWithIcon = mockContext({ flex: 10n, icon: 20n })
-    const result = sortNClassValue("'icon', 'icon--' . \$icon['icon'], 'flex'", ctxWithIcon, defaults)
+    const result = sortNClassValue("'icon', 'icon--' . $icon['icon'], 'flex'", ctxWithIcon, defaults)
     // 'icon' alone before barrier, 'flex' alone after → no token reordering
-    expect(result).toBe("'icon', 'icon--' . \$icon['icon'], 'flex'")
+    expect(result).toBe("'icon', 'icon--' . $icon['icon'], 'flex'")
   })
 
   it('PHP concatenation preserves space around dot operator', () => {
-    const result = sortNClassValue("'icon', 'icon--' . \$icon['icon'], 'flex items-center w-5', \$icon['class'], \$iconClass", ctx, defaults)
-    expect(result).toContain("'icon--' . \$icon['icon']")
+    const result = sortNClassValue(
+      "'icon', 'icon--' . $icon['icon'], 'flex items-center w-5', $icon['class'], $iconClass",
+      ctx,
+      defaults
+    )
+    expect(result).toContain("'icon--' . $icon['icon']")
   })
 
   it('multi-class quoted string acts as barrier', () => {
@@ -199,8 +203,14 @@ describe('sortNClassValue — token-level sorting', () => {
   })
 
   it('preserves separator after ternary barrier', () => {
-    const result = sortNClassValue("'icon', $isFavorite ? 'icon--heart-solid text-promo-primary' : 'icon--heart-outline', 'leading-none'", ctx, defaults)
-    expect(result).toBe("'icon', $isFavorite ? 'icon--heart-solid text-promo-primary' : 'icon--heart-outline', 'leading-none'")
+    const result = sortNClassValue(
+      "'icon', $isFavorite ? 'icon--heart-solid text-promo-primary' : 'icon--heart-outline', 'leading-none'",
+      ctx,
+      defaults
+    )
+    expect(result).toBe(
+      "'icon', $isFavorite ? 'icon--heart-solid text-promo-primary' : 'icon--heart-outline', 'leading-none'"
+    )
   })
 
   it('unknown classes come first within a group', () => {
@@ -244,7 +254,9 @@ describe('sortNClassValue — whitespace modes', () => {
 
   it('normalize-barriers: ensures space after comma at barrier boundaries', () => {
     // Missing space after barrier: ,'leading-none' → should become , 'leading-none'
-    const result = sortNClassValue("'icon',$bar ? 'h-5','text-sm'", ctx, { tailwindNclassWhitespace: 'normalize-barriers' })
+    const result = sortNClassValue("'icon',$bar ? 'h-5','text-sm'", ctx, {
+      tailwindNclassWhitespace: 'normalize-barriers'
+    })
     expect(result).toBe("'icon', $bar ? 'h-5', 'text-sm'")
   })
 
@@ -264,13 +276,17 @@ describe('sortNClassValue — whitespace modes', () => {
   })
 
   it('normalize-barriers: normalizes PHP concatenation spacing', () => {
-    const result = sortNClassValue("'icon','icon--'.\$icon['icon'],'flex'", ctx, { tailwindNclassWhitespace: 'normalize-barriers' })
-    expect(result).toBe("'icon', 'icon--' . \$icon['icon'], 'flex'")
+    const result = sortNClassValue("'icon','icon--'.$icon['icon'],'flex'", ctx, {
+      tailwindNclassWhitespace: 'normalize-barriers'
+    })
+    expect(result).toBe("'icon', 'icon--' . $icon['icon'], 'flex'")
   })
 
   it('preserve: does NOT normalize PHP concatenation spacing', () => {
-    const result = sortNClassValue("'icon','icon--'.\$icon['icon'],'flex'", ctx, { tailwindNclassWhitespace: 'preserve' })
-    expect(result).toBe("'icon','icon--'.\$icon['icon'],'flex'")
+    const result = sortNClassValue("'icon','icon--'.$icon['icon'],'flex'", ctx, {
+      tailwindNclassWhitespace: 'preserve'
+    })
+    expect(result).toBe("'icon','icon--'.$icon['icon'],'flex'")
   })
 })
 

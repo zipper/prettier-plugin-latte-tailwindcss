@@ -179,9 +179,7 @@ describe('n:class tuple — non-class captures skipped', () => {
   // PhpStorm n:class tuple pattern:
   // outer: n:class="([^"]*)"
   // inner: ["'`]([^"'`]*)["'`]
-  const nclassTupleJson = JSON.stringify([
-    ['n:class="([^"]*)"', "[\"'`]([^\"'`]*)[\"'`]"]
-  ])
+  const nclassTupleJson = JSON.stringify([['n:class="([^"]*)"', '["\'`]([^"\'`]*)["\'`]']])
 
   it('does not damage separators between quoted tokens', () => {
     const code = `<i n:class="'icon', $isFavorite ? 'icon--heart-solid text-promo-primary' : 'icon--heart-outline','leading-none'" aria-hidden="true"></i>`
