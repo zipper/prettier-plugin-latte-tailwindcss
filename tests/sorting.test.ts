@@ -91,7 +91,7 @@ describe('sortClasses', () => {
   })
 
   it('preserves original whitespace separators when preserveWhitespace is set', () => {
-    expect(sortClasses('mt-1\n  flex', ctx, { preserveWhitespace: true })).toBe('flex\n  mt-1')
+    expect(sortClasses('mt-1  flex', ctx, { preserveWhitespace: true })).toBe('flex  mt-1')
   })
 
   it('removes duplicate classes by default', () => {
@@ -112,5 +112,9 @@ describe('sortClasses', () => {
 
   it('preserves trailing whitespace when preserveWhitespace is true', () => {
     expect(sortClasses('mt-1 flex ', ctx, { preserveWhitespace: true })).toBe('flex mt-1 ')
+  })
+
+  it('treats newlines as barriers when preserveWhitespace is set', () => {
+    expect(sortClasses('mt-1 flex\n  block w-5', ctx, { preserveWhitespace: true })).toBe('flex mt-1\n  block w-5')
   })
 })

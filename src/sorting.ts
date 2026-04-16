@@ -19,6 +19,17 @@ export function sortClasses(classStr: string, context: TailwindContext | null, o
 
   const { removeDuplicates = true, preserveWhitespace = false } = opts
 
+  // When preserveWhitespace is set, treat newlines as barriers — sort each line independently
+  if (preserveWhitespace && classStr.includes('\n')) {
+    const segments = classStr.split(/(\r?\n[ \t]*)/)
+    return segments
+      .map((segment, i) => {
+        if (i % 2 === 1) return segment // newline separator, keep as-is
+        return sortClasses(segment, context, opts)
+      })
+      .join('')
+  }
+
   // Whitespace-only string → normalize to single space
   if (!preserveWhitespace && /^[\t\r\f\n ]+$/.test(classStr)) return ' '
 
