@@ -185,6 +185,11 @@ describe('sortNClassValue — token-level sorting', () => {
     expect(result).toBe("'icon', 'icon--' . \$icon['icon'], 'flex'")
   })
 
+  it('PHP concatenation preserves space around dot operator', () => {
+    const result = sortNClassValue("'icon', 'icon--' . \$icon['icon'], 'flex items-center w-5', \$icon['class'], \$iconClass", ctx, defaults)
+    expect(result).toContain("'icon--' . \$icon['icon']")
+  })
+
   it('multi-class quoted string acts as barrier', () => {
     const result = sortNClassValue("'text-left', 'flex btn', 'w-5'", ctx, defaults)
     // 'text-left' alone in group (before barrier 'flex btn')
@@ -256,6 +261,16 @@ describe('sortNClassValue — whitespace modes', () => {
   it('preserve: does NOT normalize ternary spacing', () => {
     const result = sortNClassValue("$x ?'active':'inactive'", ctx, { tailwindNclassWhitespace: 'preserve' })
     expect(result).toBe("$x ?'active':'inactive'")
+  })
+
+  it('normalize-barriers: normalizes PHP concatenation spacing', () => {
+    const result = sortNClassValue("'icon','icon--'.\$icon['icon'],'flex'", ctx, { tailwindNclassWhitespace: 'normalize-barriers' })
+    expect(result).toBe("'icon', 'icon--' . \$icon['icon'], 'flex'")
+  })
+
+  it('preserve: does NOT normalize PHP concatenation spacing', () => {
+    const result = sortNClassValue("'icon','icon--'.\$icon['icon'],'flex'", ctx, { tailwindNclassWhitespace: 'preserve' })
+    expect(result).toBe("'icon','icon--'.\$icon['icon'],'flex'")
   })
 })
 

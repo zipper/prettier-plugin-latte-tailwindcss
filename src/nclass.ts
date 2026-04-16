@@ -348,6 +348,11 @@ function sortTokenInternalClasses(token: NClassToken, context: TailwindContext, 
     return
   }
 
+  // PHP concatenation: normalize spaces around `.` operator
+  if (!preserveMode && content.includes('.') && content.includes('$')) {
+    token.content = normalizePhpConcatSpacing(content)
+  }
+
   // Multi-class quoted string: sort inner classes
   if (content.startsWith("'") && content.endsWith("'") && content.length >= 2) {
     const inner = content.slice(1, -1)
@@ -396,6 +401,63 @@ function sortBranchPreserve(
   if (!trimmed) return branch
 
   return lead + sortBranch(trimmed, context, sortOpts) + trail
+}
+
+// ─── PHP concatenation spacing ───
+
+/**
+ * Normalize spaces around top-level `.` (PHP concatenation operator).
+ * Ensures ` . ` spacing while skipping dots inside strings, brackets, and method chains.
+ */
+function normalizePhpConcatSpacing(s: string): string {
+  let result = ''
+  let inString = false
+  let depth = 0
+
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i]
+
+    if (inString) {
+      result += ch
+      if (ch === "'" && s[i - 1] !== '\\') inString = false
+      continue
+    }
+
+    if (ch === "'") {
+      inString = true
+      result += ch
+      continue
+    }
+    if (ch === '(' || ch === '[') {
+      depth++
+      result += ch
+      continue
+    }
+    if ((ch === ')' || ch === ']') && depth > 0) {
+      depth--
+      result += ch
+      continue
+    }
+
+    if (ch === '.' && depth === 0) {
+      // Skip -> and ?-> (property/method access)
+      if (s[i - 1] === '-' || s[i - 1] === '>') {
+        result += ch
+        continue
+      }
+
+      // Normalize: trim trailing spaces before dot, add ` . `
+      result = result.replace(/\s+$/, '')
+      result += ' . '
+      // Skip whitespace after dot
+      while (i + 1 < s.length && /\s/.test(s[i + 1])) i++
+      continue
+    }
+
+    result += ch
+  }
+
+  return result
 }
 
 // ─── Token-level sorting ───

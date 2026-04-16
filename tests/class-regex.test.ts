@@ -208,6 +208,13 @@ describe('n:class tuple — non-class captures skipped', () => {
     const result = applyClassRegex(code, patterns, sortFn)
     expect(result).toContain("' : '")
   })
+
+  it('preserves space around PHP concatenation operator', () => {
+    const code = `<i n:class="'icon', 'icon--' . $icon['icon'], 'flex items-center w-5'" aria-hidden="true"></i>`
+    const patterns = parseClassRegexPatterns(nclassTupleJson)
+    const result = applyClassRegex(code, patterns, sortFn)
+    expect(result).toContain("'icon--' . $icon")
+  })
 })
 
 // ─── runtime capture safety ───
