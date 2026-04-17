@@ -196,6 +196,20 @@ describe('sortNClassValue — token-level sorting', () => {
     expect(result).toContain("'icon--' . $icon['icon']")
   })
 
+  it('PHP concatenation inside a conditional branch is preserved atomically', () => {
+    // Regression: sortBranch previously split the branch on whitespace and fed it to
+    // sortClasses, which corrupted `'a b c' . $x->m()` into a reordered token mess
+    // where the `.$x->m()` part landed in the middle of the class list.
+    const input =
+      "'relative block', $hasAjaxRule ? '[--spinner-inset:1px] [--spinner-left:auto] pdforms-ajax-spinner--' . $control->getHtmlId()"
+    const result = sortNClassValue(input, ctx, defaults)
+    // Branch is NOT a plain quoted string (ends with `)`, not `'`), so it must stay
+    // untouched verbatim.
+    expect(result).toContain(
+      "$hasAjaxRule ? '[--spinner-inset:1px] [--spinner-left:auto] pdforms-ajax-spinner--' . $control->getHtmlId()"
+    )
+  })
+
   it('multi-class quoted string acts as barrier', () => {
     const result = sortNClassValue("'text-left', 'flex btn', 'w-5'", ctx, defaults)
     // 'text-left' alone in group (before barrier 'flex btn')

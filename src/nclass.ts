@@ -378,12 +378,10 @@ function sortBranch(
     return branch
   }
 
-  // Bare multi-word — sort as space-separated classes
-  if (branch.includes(' ') && !branch.startsWith('$')) {
-    return sortClasses(branch, context, sortOpts)
-  }
-
-  // Single bare class or dynamic — unchanged
+  // Anything else — bare single identifier, dynamic expression, PHP concatenation
+  // (`'foo' . $x`), mixed constructs. Treat as atomic barrier and do not rewrite,
+  // because extracting whitespace-separated tokens from PHP syntax would corrupt
+  // the expression (e.g. split `'foo bar' . $x->m()` into broken fragments).
   return branch
 }
 
