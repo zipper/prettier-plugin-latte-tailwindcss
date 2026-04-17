@@ -1,5 +1,5 @@
-import { UNSPECIFIED_IGNORE, getClassSortInfo } from './property-order'
-import { sortClasses } from './sorting'
+import { getClassSortInfo } from './property-order'
+import { compareTailwindEntries, sortClasses } from './sorting'
 import type { LatteOptions, TailwindContext } from './types'
 
 // ─── Public types ───
@@ -487,48 +487,24 @@ function sortGroup(tokens: NClassToken[], start: number, end: number, context: T
 
   const group = tokens.slice(start, end)
   const classNames = group.map((t) => t.sortKey)
+  const order = context.getClassOrder(classNames)
 
-  if (context.propertyOrder) {
-    // Custom property ordering
-    const propCtx = context.propertyOrder
-    const order = context.getClassOrder(classNames)
-    const indices = order.map(([name, twBigint], i) => ({
-      i,
-      twBigint,
-      ...getClassSortInfo(name, propCtx)
-    }))
+  const propCtx = context.propertyOrder
+  const entries = order.map(([name, twBigint], i) => ({
+    i,
+    name,
+    twBigint,
+    ...(propCtx ? getClassSortInfo(name, propCtx) : { variantKey: 0, propIndex: 0 })
+  }))
 
-    indices.sort((a, b) => {
-      if (a.twBigint === null && b.twBigint !== null) return -1
-      if (a.twBigint !== null && b.twBigint === null) return 1
-      if (a.twBigint === null && b.twBigint === null) return 0
-      if (a.variantKey !== b.variantKey) return a.variantKey - b.variantKey
-      if (a.propIndex !== b.propIndex) {
-        if (a.propIndex === UNSPECIFIED_IGNORE && b.propIndex === UNSPECIFIED_IGNORE) {
-          return a.twBigint! < b.twBigint! ? -1 : a.twBigint! > b.twBigint! ? 1 : 0
-        }
-        if (a.propIndex === UNSPECIFIED_IGNORE) return 1
-        if (b.propIndex === UNSPECIFIED_IGNORE) return -1
-        return a.propIndex - b.propIndex
-      }
-      if (a.twBigint === b.twBigint) return 0
-      return a.twBigint! < b.twBigint! ? -1 : 1
-    })
+  entries.sort((a, b) => {
+    // Unknown classes (null bigint) first — same as sortClassList
+    if (a.twBigint === null && b.twBigint !== null) return -1
+    if (a.twBigint !== null && b.twBigint === null) return 1
+    if (a.twBigint === null && b.twBigint === null) return 0
+    return compareTailwindEntries(a, b, context)
+  })
 
-    const sorted = indices.map(({ i }) => group[i])
-    for (let k = 0; k < sorted.length; k++) tokens[start + k] = sorted[k]
-  } else {
-    // Default Tailwind ordering
-    const order = context.getClassOrder(classNames)
-    const indices = order.map(([, bigint], i) => ({ i, bigint }))
-    indices.sort((a, b) => {
-      if (a.bigint === b.bigint) return 0
-      if (a.bigint === null) return -1
-      if (b.bigint === null) return 1
-      return a.bigint < b.bigint ? -1 : 1
-    })
-
-    const sorted = indices.map(({ i }) => group[i])
-    for (let k = 0; k < sorted.length; k++) tokens[start + k] = sorted[k]
-  }
+  const sorted = entries.map(({ i }) => group[i])
+  for (let k = 0; k < sorted.length; k++) tokens[start + k] = sorted[k]
 }

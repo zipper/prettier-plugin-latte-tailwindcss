@@ -7,6 +7,56 @@ export interface SortOptions {
 }
 
 /**
+ * Entry describing a single class with all data needed for comparison.
+ * Callers must ensure `twBigint` is non-null — the comparator does not
+ * handle the unknown-class case (null bigint). `variantKey` and `propIndex`
+ * are only consulted when `context.propertyOrder` is set; otherwise pass
+ * any value (e.g. 0).
+ */
+export interface TailwindEntry {
+  name: string
+  twBigint: bigint | null
+  variantKey: number
+  propIndex: number
+}
+
+/**
+ * Compare two classes with known (non-null) Tailwind bigints.
+ * Ordering: variant > property (when propertyOrder is active) > TW bigint.
+ *
+ * Callers must guarantee that both `a.twBigint` and `b.twBigint` are non-null;
+ * unknown-class handling (null bigint) is the caller's responsibility.
+ *
+ * Placeholder handling (`name === '...'` / `'…'`) is kept for safety with
+ * existing snapshots, but in practice those names never reach this comparator
+ * in Latte templates.
+ */
+export function compareTailwindEntries(a: TailwindEntry, b: TailwindEntry, context: TailwindContext): number {
+  // Dynamic placeholders always last (kept for snapshot compatibility)
+  if (a.name === '...' || a.name === '…') return 1
+  if (b.name === '...' || b.name === '…') return -1
+
+  if (context.propertyOrder) {
+    // 1. Variant key
+    if (a.variantKey !== b.variantKey) return a.variantKey - b.variantKey
+    // 2. Property index
+    if (a.propIndex !== b.propIndex) {
+      // 'ignore' mode: use TW bigint for unspecified props
+      if (a.propIndex === UNSPECIFIED_IGNORE && b.propIndex === UNSPECIFIED_IGNORE) {
+        return a.twBigint! < b.twBigint! ? -1 : a.twBigint! > b.twBigint! ? 1 : 0
+      }
+      if (a.propIndex === UNSPECIFIED_IGNORE) return 1
+      if (b.propIndex === UNSPECIFIED_IGNORE) return -1
+      return a.propIndex - b.propIndex
+    }
+  }
+
+  // 3. TW bigint tiebreaker (also the only ordering when propertyOrder is off)
+  if (a.twBigint === b.twBigint) return 0
+  return a.twBigint! < b.twBigint! ? -1 : 1
+}
+
+/**
  * Sort a whitespace-separated class string using Tailwind order.
  * Returns the string unchanged if context is null or the string contains Latte expressions.
  */
@@ -84,49 +134,40 @@ export function sortClassList(
   if (context.propertyOrder) {
     // Custom property ordering: variant → property → TW bigint tiebreaker
     const propCtx = context.propertyOrder
-    const infos = orderedClasses.map(([name, twBigint]) => ({
+    const infos: TailwindEntry[] = orderedClasses.map(([name, twBigint]) => ({
       name,
       twBigint,
       ...getClassSortInfo(name, propCtx)
     }))
 
     infos.sort((a, b) => {
-      // Dynamic placeholders always last
+      // Dynamic placeholders always last (checked before null-bigint because
+      // placeholders have a null bigint themselves)
       if (a.name === '...' || a.name === '…') return 1
       if (b.name === '...' || b.name === '…') return -1
       // Unknown classes (null TW bigint = non-TW) first
       if (a.twBigint === null && b.twBigint !== null) return -1
       if (a.twBigint !== null && b.twBigint === null) return 1
       if (a.twBigint === null && b.twBigint === null) return 0
-      // 1. Variant key
-      if (a.variantKey !== b.variantKey) return a.variantKey - b.variantKey
-      // 2. Property index
-      if (a.propIndex !== b.propIndex) {
-        // 'ignore' mode: use TW bigint for unspecified props
-        if (a.propIndex === UNSPECIFIED_IGNORE && b.propIndex === UNSPECIFIED_IGNORE) {
-          return a.twBigint! < b.twBigint! ? -1 : a.twBigint! > b.twBigint! ? 1 : 0
-        }
-        if (a.propIndex === UNSPECIFIED_IGNORE) return 1
-        if (b.propIndex === UNSPECIFIED_IGNORE) return -1
-        return a.propIndex - b.propIndex
-      }
-      // 3. TW bigint tiebreaker
-      if (a.twBigint === b.twBigint) return 0
-      return a.twBigint! < b.twBigint! ? -1 : 1
+      return compareTailwindEntries(a, b, context)
     })
 
     orderedClasses = infos.map(({ name, twBigint }) => [name, twBigint] as [string, bigint | null])
   } else {
     // Default Tailwind ordering
     orderedClasses.sort(([nameA, a], [nameZ, z]) => {
-      // Dynamic placeholders always last
+      // Dynamic placeholders always last (before null-bigint check)
       if (nameA === '...' || nameA === '…') return 1
       if (nameZ === '...' || nameZ === '…') return -1
-      if (a === z) return 0
       // Unknown classes (null bigint) first
-      if (a === null) return -1
-      if (z === null) return 1
-      return a < z ? -1 : 1
+      if (a === null && z !== null) return -1
+      if (a !== null && z === null) return 1
+      if (a === null && z === null) return 0
+      return compareTailwindEntries(
+        { name: nameA, twBigint: a, variantKey: 0, propIndex: 0 },
+        { name: nameZ, twBigint: z, variantKey: 0, propIndex: 0 },
+        context
+      )
     })
   }
 
