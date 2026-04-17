@@ -238,19 +238,26 @@ Controls how whitespace separators between `n:class` tokens are handled when tok
   'mt-4'">
 ```
 
-**`normalize-barriers`** (default) &mdash; Separators within sortable groups are normalized to `, `. Separators after barrier tokens (conditionals, variables, multi-class strings) are preserved.
+**`normalize-barriers`** (default) &mdash; Within sortable groups: newlines are preserved (so user-intended multi-line layout survives sorting); horizontal-only separators collapse to `, `. Separators after barrier tokens (conditionals, variables, multi-class strings) are always preserved.
 
 ```latte
-{* Input *}
+{* Input — multi-line *}
 <div n:class="'text-left',
   'flex',
   $active ? 'font-bold',
   'mt-4'">
 
-{* Output *}
-<div n:class="'flex', 'text-left',
+{* Output — newlines kept *}
+<div n:class="'flex',
+  'text-left',
   $active ? 'font-bold',
   'mt-4'">
+
+{* Input — single-line with extra spaces *}
+<div n:class="'text-left',  'flex',  $active ? 'font-bold'">
+
+{* Output — collapses to single-space separator *}
+<div n:class="'flex', 'text-left', $active ? 'font-bold'">
 ```
 
 **`normalize`** &mdash; All separators normalized to `, ` (single-line output).

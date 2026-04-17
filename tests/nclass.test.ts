@@ -248,9 +248,18 @@ describe('sortNClassValue — whitespace modes', () => {
     expect(result).toBe("'foo',\n  'w-5',\n  'text-left',\n  $bar ? 'h-5',\n  'text-sm'")
   })
 
-  it('normalize-barriers: normalizes within groups, preserves at boundaries', () => {
+  it('normalize-barriers: preserves newlines within sortable groups, normalizes at boundaries', () => {
+    // Newlines between sortable tokens are kept (structural intent survives sorting);
+    // only horizontal-whitespace-only separators collapse to `, `.
     const result = sortNClassValue(multiline, ctx, { tailwindNclassWhitespace: 'normalize-barriers' })
-    expect(result).toBe("'foo', 'w-5', 'text-left',\n  $bar ? 'h-5',\n  'text-sm'")
+    expect(result).toBe("'foo',\n  'w-5',\n  'text-left',\n  $bar ? 'h-5',\n  'text-sm'")
+  })
+
+  it('normalize-barriers: collapses horizontal-only separators between sortable tokens', () => {
+    // Same sortable group but single-line in input → stays single-line with `, `
+    const inline = "'foo',  'text-left',  'w-5',\n  $bar ? 'h-5'"
+    const result = sortNClassValue(inline, ctx, { tailwindNclassWhitespace: 'normalize-barriers' })
+    expect(result).toBe("'foo', 'w-5', 'text-left',\n  $bar ? 'h-5'")
   })
 
   it('normalize: all separators become ", "', () => {
@@ -260,7 +269,7 @@ describe('sortNClassValue — whitespace modes', () => {
 
   it('default mode is normalize-barriers', () => {
     const result = sortNClassValue(multiline, ctx, {})
-    expect(result).toBe("'foo', 'w-5', 'text-left',\n  $bar ? 'h-5',\n  'text-sm'")
+    expect(result).toBe("'foo',\n  'w-5',\n  'text-left',\n  $bar ? 'h-5',\n  'text-sm'")
   })
 
   it('preserves prefix and suffix whitespace', () => {

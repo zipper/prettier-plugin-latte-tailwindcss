@@ -162,7 +162,15 @@ export function serializeNClass(
           // Normalize within sortable groups; preserve at group boundaries and after barriers
           const bothSortable = tokens[i].sortable && tokens[i + 1]?.sortable
           if (bothSortable) {
-            result += ', '
+            const originalSep = originalSeps[i] || ''
+            // Preserve newline + indentation across sortable tokens so that
+            // user-intended multi-line layout survives. Horizontal-only separators
+            // collapse to `, ` for consistency.
+            if (originalSep.includes('\n')) {
+              result += originalSep
+            } else {
+              result += ', '
+            }
           } else {
             const sep = originalSeps[i] || ', '
             // Ensure at least one space after comma at barrier boundaries
