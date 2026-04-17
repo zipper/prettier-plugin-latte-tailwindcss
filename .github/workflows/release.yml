@@ -45,6 +45,6 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - run: gh release create "${{ github.ref_name }}" --draft --generate-notes
+      - run: gh release create "${{ github.ref_name }}" --draft --generate-notes --target "${{ github.sha }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
