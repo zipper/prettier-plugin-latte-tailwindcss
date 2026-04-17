@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { defaultClassOrderContext } from '../src/class-order'
 import { sortClasses, sortClassList } from '../src/sorting'
 import type { TailwindContext } from '../src/types'
 
@@ -6,7 +7,8 @@ import type { TailwindContext } from '../src/types'
 // < w-5(100) < text-sm(200) < mt-1(300) < mb-2(310)
 function mockContext(order: Record<string, bigint>): TailwindContext {
   return {
-    getClassOrder: (classList: string[]) => classList.map((c): [string, bigint | null] => [c, order[c] ?? null])
+    getClassOrder: (classList: string[]) => classList.map((c): [string, bigint | null] => [c, order[c] ?? null]),
+    classOrder: defaultClassOrderContext()
   }
 }
 
@@ -33,9 +35,11 @@ describe('sortClassList', () => {
     expect(result.classList).toEqual(['flex', 'w-5', 'mt-1'])
   })
 
-  it('dynamic placeholders "..." and "…" come last', () => {
+  it('dynamic placeholders "..." are bucketed as unknown (null bigint)', () => {
+    // With the bucket algorithm, placeholders have null bigint → fall into the "unknown"
+    // bucket in stable input order (Latte templates never produce such placeholders).
     const result = sortClassList(['flex', '...', 'custom'], ctx, true)
-    expect(result.classList).toEqual(['custom', 'flex', '...'])
+    expect(result.classList).toEqual(['...', 'custom', 'flex'])
   })
 
   it('removes duplicate known classes', () => {

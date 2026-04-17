@@ -3,6 +3,7 @@ import * as path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { createJiti } from 'jiti'
 import prettier from 'prettier'
+import { resolveClassOrderConfig } from './class-order'
 import { createPropertyOrderContext, loadPropertyOrderConfig } from './property-order'
 import type { DesignSystemForPropertyOrder } from './property-order'
 import { resolveCssFrom, resolveJsFrom } from './resolve'
@@ -39,7 +40,8 @@ const prettierConfigCache = new Map<string, string>()
 export async function loadTailwindContext(
   stylesheet: string | undefined,
   filepath: string,
-  propertyOrderPath?: string
+  propertyOrderPath?: string,
+  classOrderRaw?: unknown
 ): Promise<TailwindContext | null> {
   const inputDir = filepath ? path.dirname(filepath) : process.cwd()
   const configDir = await resolvePrettierConfigDir(filepath, inputDir)
@@ -50,12 +52,12 @@ export async function loadTailwindContext(
     resolvedStylesheet = path.isAbsolute(stylesheet) ? stylesheet : path.resolve(configDir, stylesheet)
   }
 
-  const cacheKey = `${configDir}::${resolvedStylesheet ?? ''}::${propertyOrderPath ?? ''}`
+  const cacheKey = `${configDir}::${resolvedStylesheet ?? ''}::${propertyOrderPath ?? ''}::${JSON.stringify(classOrderRaw ?? '')}`
 
   const cached = contextCache.get(cacheKey)
   if (cached !== undefined) return cached
 
-  const promise = doLoad(resolvedStylesheet, configDir, propertyOrderPath)
+  const promise = doLoad(resolvedStylesheet, configDir, propertyOrderPath, classOrderRaw)
   contextCache.set(cacheKey, promise)
   return promise
 }
@@ -63,7 +65,8 @@ export async function loadTailwindContext(
 async function doLoad(
   stylesheet: string | undefined,
   configDir: string,
-  propertyOrderPath?: string
+  propertyOrderPath?: string,
+  classOrderRaw?: unknown
 ): Promise<TailwindContext | null> {
   // Locate @tailwindcss/node in the user's project
   let tailwindPath: string
@@ -132,8 +135,11 @@ async function doLoad(
     return null
   }
 
+  const classOrder = await resolveClassOrderConfig(classOrderRaw, configDir)
+
   const context: TailwindContext = {
-    getClassOrder: (classList: string[]) => design.getClassOrder(classList)
+    getClassOrder: (classList: string[]) => design.getClassOrder(classList),
+    classOrder
   }
 
   // Load property order config if specified

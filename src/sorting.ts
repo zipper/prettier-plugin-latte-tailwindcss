@@ -1,3 +1,4 @@
+import { applyBuckets } from './class-order'
 import { UNSPECIFIED_IGNORE, getClassSortInfo } from './property-order'
 import type { TailwindContext } from './types'
 
@@ -117,65 +118,47 @@ export function sortClasses(classStr: string, context: TailwindContext | null, o
 }
 
 /**
- * Sort an array of class names using Tailwind order.
+ * Sort an array of class names using configurable bucket ordering.
  *
- * Ordering rules (from prettier-plugin-tailwindcss/src/sorting.ts):
- *   - null bigint (unknown / non-Tailwind classes) → FIRST
- *   - '...' / '…' (dynamic value placeholders)    → LAST
- *   - all others                                  → ascending bigint order
+ * Single code-path: `context.classOrder` is always present (default = unknown → tailwind
+ * with unspecified: 'top', which matches the previous fixed "unknown FIRST → tailwind ASC"
+ * behavior). The `tailwind` bucket is the only one that applies the comparator
+ * (variant > property > TW bigint); `unknown` and `pattern` buckets preserve input order.
+ *
+ * Deduplication (first-occurrence-wins) is applied AFTER bucketing.
  */
 export function sortClassList(
   classList: string[],
   context: TailwindContext,
   removeDuplicates = true
 ): { classList: string[]; removedIndices: Set<number> } {
-  let orderedClasses = context.getClassOrder(classList)
+  const orderedClasses = context.getClassOrder(classList)
 
-  if (context.propertyOrder) {
-    // Custom property ordering: variant → property → TW bigint tiebreaker
-    const propCtx = context.propertyOrder
-    const infos: TailwindEntry[] = orderedClasses.map(([name, twBigint]) => ({
-      name,
-      twBigint,
-      ...getClassSortInfo(name, propCtx)
-    }))
+  // Precompute property-order sort info for each entry (only used inside the tailwind bucket).
+  const propCtx = context.propertyOrder
+  const entries: TailwindEntry[] = orderedClasses.map(([name, twBigint]) => ({
+    name,
+    twBigint,
+    ...(propCtx ? getClassSortInfo(name, propCtx) : { variantKey: 0, propIndex: 0 })
+  }))
 
-    infos.sort((a, b) => {
-      // Dynamic placeholders always last (checked before null-bigint because
-      // placeholders have a null bigint themselves)
-      if (a.name === '...' || a.name === '…') return 1
-      if (b.name === '...' || b.name === '…') return -1
-      // Unknown classes (null TW bigint = non-TW) first
-      if (a.twBigint === null && b.twBigint !== null) return -1
-      if (a.twBigint !== null && b.twBigint === null) return 1
-      if (a.twBigint === null && b.twBigint === null) return 0
-      return compareTailwindEntries(a, b, context)
-    })
+  // Apply buckets — comparator is only invoked on entries with non-null bigint
+  // (applyBuckets guarantees this for the 'tailwind' bucket).
+  const bucketed = applyBuckets(
+    entries,
+    context.classOrder,
+    (e) => e.name,
+    (e) => e.twBigint,
+    (a, b) => compareTailwindEntries(a, b, context)
+  )
 
-    orderedClasses = infos.map(({ name, twBigint }) => [name, twBigint] as [string, bigint | null])
-  } else {
-    // Default Tailwind ordering
-    orderedClasses.sort(([nameA, a], [nameZ, z]) => {
-      // Dynamic placeholders always last (before null-bigint check)
-      if (nameA === '...' || nameA === '…') return 1
-      if (nameZ === '...' || nameZ === '…') return -1
-      // Unknown classes (null bigint) first
-      if (a === null && z !== null) return -1
-      if (a !== null && z === null) return 1
-      if (a === null && z === null) return 0
-      return compareTailwindEntries(
-        { name: nameA, twBigint: a, variantKey: 0, propIndex: 0 },
-        { name: nameZ, twBigint: z, variantKey: 0, propIndex: 0 },
-        context
-      )
-    })
-  }
+  let result: [string, bigint | null][] = bucketed.map((e) => [e.name, e.twBigint] as [string, bigint | null])
 
   const removedIndices = new Set<number>()
 
   if (removeDuplicates) {
     const seenClasses = new Set<string>()
-    orderedClasses = orderedClasses.filter(([cls, order], index) => {
+    result = result.filter(([cls, order], index) => {
       if (seenClasses.has(cls)) {
         removedIndices.add(index)
         return false
@@ -186,7 +169,7 @@ export function sortClassList(
   }
 
   return {
-    classList: orderedClasses.map(([cls]) => cls),
+    classList: result.map(([cls]) => cls),
     removedIndices
   }
 }

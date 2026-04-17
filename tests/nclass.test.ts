@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
+import { defaultClassOrderContext } from '../src/class-order'
 import { parseNClass, sortNClassValue } from '../src/nclass'
 import type { TailwindContext } from '../src/types'
 
 function mockContext(order: Record<string, bigint>): TailwindContext {
   return {
-    getClassOrder: (classList: string[]) => classList.map((c): [string, bigint | null] => [c, order[c] ?? null])
+    getClassOrder: (classList: string[]) => classList.map((c): [string, bigint | null] => [c, order[c] ?? null]),
+    classOrder: defaultClassOrderContext()
   }
 }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import * as path from 'node:path'
 import * as fs from 'node:fs'
+import { defaultClassOrderContext } from '../src/class-order'
 import { extractClassAttributes } from '../src/extract'
 import { preprocessLatte, restorePlaceholders } from '../src/preprocess'
 import { sortClasses } from '../src/sorting'
@@ -18,7 +19,8 @@ function createAlphabeticalContext(): TailwindContext {
         const idx = sorted.indexOf(cls)
         return [cls, BigInt(idx)]
       })
-    }
+    },
+    classOrder: defaultClassOrderContext()
   }
 }
 

@@ -1,3 +1,4 @@
+import { applyBuckets } from './class-order'
 import { getClassSortInfo } from './property-order'
 import { compareTailwindEntries, sortClasses } from './sorting'
 import type { LatteOptions, TailwindContext } from './types'
@@ -490,6 +491,7 @@ function sortGroup(tokens: NClassToken[], start: number, end: number, context: T
   const order = context.getClassOrder(classNames)
 
   const propCtx = context.propertyOrder
+  // Carry the original index (`i`) so we can map the bucketed result back to tokens.
   const entries = order.map(([name, twBigint], i) => ({
     i,
     name,
@@ -497,14 +499,15 @@ function sortGroup(tokens: NClassToken[], start: number, end: number, context: T
     ...(propCtx ? getClassSortInfo(name, propCtx) : { variantKey: 0, propIndex: 0 })
   }))
 
-  entries.sort((a, b) => {
-    // Unknown classes (null bigint) first — same as sortClassList
-    if (a.twBigint === null && b.twBigint !== null) return -1
-    if (a.twBigint !== null && b.twBigint === null) return 1
-    if (a.twBigint === null && b.twBigint === null) return 0
-    return compareTailwindEntries(a, b, context)
-  })
+  // Single code-path through the bucket algorithm — `context.classOrder` is always present.
+  const bucketed = applyBuckets(
+    entries,
+    context.classOrder,
+    (e) => e.name,
+    (e) => e.twBigint,
+    (a, b) => compareTailwindEntries(a, b, context)
+  )
 
-  const sorted = entries.map(({ i }) => group[i])
+  const sorted = bucketed.map((e) => group[e.i])
   for (let k = 0; k < sorted.length; k++) tokens[start + k] = sorted[k]
 }

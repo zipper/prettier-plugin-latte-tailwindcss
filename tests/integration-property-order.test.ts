@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { defaultClassOrderContext } from '../src/class-order'
 import { createPropertyOrderContext } from '../src/property-order'
 import type { DesignSystemForPropertyOrder } from '../src/property-order'
 import { sortClasses, sortClassList } from '../src/sorting'
@@ -127,7 +128,8 @@ function createMockDesignSystem(): {
   }
 
   const context: TailwindContext = {
-    getClassOrder: (classList) => classList.map((c): [string, bigint | null] => [c, twOrder[c] ?? null])
+    getClassOrder: (classList) => classList.map((c): [string, bigint | null] => [c, twOrder[c] ?? null]),
+    classOrder: defaultClassOrderContext()
   }
 
   return { ds, context }
@@ -234,10 +236,12 @@ describe('property ordering — sortClassList', () => {
     expect(result.classList).toEqual(['flex', 'w-5', 'p-4'])
   })
 
-  it('handles dynamic placeholders', () => {
+  it('handles dynamic placeholders (bucketed as unknown)', () => {
+    // Placeholders have null bigint → "unknown" bucket (stable input order).
+    // Latte templates never produce such placeholders; kept here just for coverage.
     const ctx = createContextWithPropertyOrder()
     const result = sortClassList(['flex', '...', 'w-5'], ctx)
-    expect(result.classList).toEqual(['flex', 'w-5', '...'])
+    expect(result.classList).toEqual(['...', 'flex', 'w-5'])
   })
 })
 

@@ -33,7 +33,8 @@ export const parsers: Plugin['parsers'] = {
       const ctx = await loadTailwindContext(
         opts.tailwindStylesheet,
         parserOptions.filepath ?? '',
-        opts.tailwindPropertyOrder || undefined
+        opts.tailwindPropertyOrder || undefined,
+        opts.tailwindClassOrder
       )
 
       // Pass 1: classRegex on original text (before preprocess)
