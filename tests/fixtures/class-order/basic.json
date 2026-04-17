@@ -1,0 +1,4 @@
+[
+  ["unknown", { "pattern": "^js-" }, "tailwind"],
+  { "unspecified": "bottom" }
+]
