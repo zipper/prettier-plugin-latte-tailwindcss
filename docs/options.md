@@ -111,6 +111,97 @@ Input:   text-red-500 p-4 md:flex flex md:p-4 w-5
 Output:  flex w-5 p-4 text-red-500 md:flex md:p-4
 ```
 
+## `tailwindClassOrder`
+
+**Type:** `string | array` &middot; **Default:** `""` (implicit `["unknown", "tailwind"]`)
+
+Configurable class ordering through a list of **buckets** processed greedily top-down. Each class goes to the first bucket that matches it; within a bucket, classes keep their input order &mdash; except the `"tailwind"` bucket, which sorts by Tailwind&rsquo;s class order (and by `tailwindPropertyOrder` if set).
+
+### Bucket types
+
+- **`"unknown"`** &mdash; matches classes Tailwind doesn&rsquo;t recognize (no bigint). Stable input order.
+- **`"tailwind"`** (alias `"tailwindcss"`) &mdash; matches any known Tailwind utility. Sorted by Tailwind order.
+- **`{ "pattern": "^..." }`** &mdash; regex match against the class name. Stable input order. Anchors (`^`, `$`) must be written explicitly &mdash; no implicit anchoring. **Greedy:** a pattern listed before `"tailwind"` will also capture known Tailwind utilities that match.
+
+### Inline array form (recommended)
+
+```json
+{
+  "tailwindClassOrder": [
+    ["unknown", { "pattern": "^icon(?:--|$)" }, "tailwind", { "pattern": "^js-" }],
+    { "unspecified": "top" }
+  ]
+}
+```
+
+The first element is the bucket list, the second is secondary options (currently only `unspecified: "top" | "bottom"` &mdash; default `"top"`). A flat array of buckets is also accepted:
+
+```json
+{
+  "tailwindClassOrder": ["unknown", "tailwind", { "pattern": "^js-" }]
+}
+```
+
+Classes that don&rsquo;t match any bucket go to the position indicated by `unspecified`.
+
+### External config file
+
+```json
+{
+  "tailwindClassOrder": "./tailwind-class-order.json"
+}
+```
+
+The path is resolved relative to your `.prettierrc` location (same resolver as `tailwindPropertyOrder`).
+
+### Default
+
+When not set, the plugin behaves as if configured with `[["unknown", "tailwind"], { "unspecified": "top" }]` &mdash; unknown classes first, then Tailwind utilities sorted by class order.
+
+### Use cases
+
+**1. Push JS hooks to the end**
+
+```json
+{
+  "tailwindClassOrder": [["unknown", "tailwind", { "pattern": "^js-" }], { "unspecified": "bottom" }]
+}
+```
+
+```
+Input:   js-toggle flex mt-4 custom-class
+Output:  custom-class flex mt-4 js-toggle
+```
+
+**2. Keep BEM modifiers next to the base class**
+
+Both `icon` and `icon--check-circle` match `^icon` and land in the same bucket, preserving input order:
+
+```json
+{
+  "tailwindClassOrder": [[{ "pattern": "^icon(?:--|$)" }, "unknown", "tailwind"]]
+}
+```
+
+```
+Input:   flex icon icon--check-circle mt-4
+Output:  icon icon--check-circle flex mt-4
+```
+
+**3. Component-like utilities first**
+
+Utilities that set multiple CSS properties (e.g. `h1`, `grid-cols-center`) can be extracted ahead of single-purpose utilities:
+
+```json
+{
+  "tailwindClassOrder": [["unknown", { "pattern": "^(h[1-6]|grid-cols-)" }, "tailwind"]]
+}
+```
+
+### Interaction with `tailwindPropertyOrder`
+
+Property order only applies inside the `"tailwind"` bucket. Pattern and `"unknown"` buckets always keep input order. If you need BEM modifiers sorted by a custom scheme, use multiple patterns (e.g. `^icon$` before `^icon--`) to split them explicitly.
+
 ## `tailwindAttributes`
 
 **Type:** `string[]` &middot; **Default:** `[]`

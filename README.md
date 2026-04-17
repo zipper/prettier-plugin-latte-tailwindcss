@@ -78,6 +78,7 @@ The plugin auto-detects classRegex patterns from your IDE configuration (`.vscod
 | `tailwindPreserveWhitespace` | `boolean` | `false` | Preserve whitespace in class attributes |
 | `tailwindPreserveDuplicates` | `boolean` | `false` | Keep duplicate classes |
 | `tailwindPropertyOrder` | `string` | `""` | Path to stylelint-order compatible config for custom CSS property ordering |
+| `tailwindClassOrder` | `string \| array` | `""` | Bucket-based class ordering (unknown / tailwind / regex patterns). Array inline in config or path to JS/JSON file |
 
 See [Options documentation](docs/options.md) for detailed descriptions and examples.
 
