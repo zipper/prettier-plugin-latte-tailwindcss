@@ -113,46 +113,54 @@ Output:  flex w-5 p-4 text-red-500 md:flex md:p-4
 
 ## `tailwindClassOrder`
 
-**Type:** `string | array` &middot; **Default:** `""` (implicit `["unknown", "tailwind"]`)
+**Type:** `string` &middot; **Default:** `""` (implicit `["unknown", "tailwind"]`)
 
-Configurable class ordering through a list of **buckets** processed greedily top-down. Each class goes to the first bucket that matches it; within a bucket, classes keep their input order &mdash; except the `"tailwind"` bucket, which sorts by Tailwind&rsquo;s class order (and by `tailwindPropertyOrder` if set).
+Configurable class ordering through a list of **buckets**. Membership follows a fixed priority rule &mdash; explicit `{pattern}` buckets always win over the `"unknown"` / `"tailwind"` catchalls. The **order you write buckets in your config controls the order of groups in the output**, not the matching priority.
+
+### Config value: path or JSON-encoded string
+
+Prettier CLI cannot accept a raw JSON array for non-array options (arrays are silently collapsed to their last element), so the option value must be a **string**:
+
+- **Path to an external file** (recommended):
+  ```json
+  { "tailwindClassOrder": "./tailwind-class-order.json" }
+  ```
+- **JSON-encoded string** starting with `[`:
+  ```json
+  { "tailwindClassOrder": "[[\"unknown\", {\"pattern\":\"^js-\"}, \"tailwind\"], {\"unspecified\":\"top\"}]" }
+  ```
+
+Path is resolved relative to your `.prettierrc` location (same resolver as `tailwindPropertyOrder`).
+
+### Config shape
+
+Tuple form `[items, secondaryOptions]` (stylelint-order style):
+
+```json
+[
+  ["unknown", { "pattern": "^icon(?:--|$)" }, "tailwind", { "pattern": "^js-" }],
+  { "unspecified": "top" }
+]
+```
+
+A flat array of buckets is also accepted (secondary options default to `{ "unspecified": "top" }`):
+
+```json
+["unknown", "tailwind", { "pattern": "^js-" }]
+```
 
 ### Bucket types
 
-- **`"unknown"`** &mdash; matches classes Tailwind doesn&rsquo;t recognize (no bigint). Stable input order.
-- **`"tailwind"`** (alias `"tailwindcss"`) &mdash; matches any known Tailwind utility. Sorted by Tailwind order.
-- **`{ "pattern": "^..." }`** &mdash; regex match against the class name. Stable input order. Anchors (`^`, `$`) must be written explicitly &mdash; no implicit anchoring. **Greedy:** a pattern listed before `"tailwind"` will also capture known Tailwind utilities that match.
+- **`"unknown"`** &mdash; catchall for classes Tailwind doesn&rsquo;t recognize (null bigint). Stable input order. Only claims classes no pattern matched.
+- **`"tailwind"`** (alias `"tailwindcss"`) &mdash; catchall for known Tailwind utilities (non-null bigint). Sorted by Tailwind order (and `tailwindPropertyOrder` if set). Only claims classes no pattern matched.
+- **`{ "pattern": "^..." }`** &mdash; regex match against the class name. Stable input order. Anchors (`^`, `$`) must be written explicitly &mdash; no implicit anchoring.
 
-### Inline array form (recommended)
+### How matching works
 
-```json
-{
-  "tailwindClassOrder": [
-    ["unknown", { "pattern": "^icon(?:--|$)" }, "tailwind", { "pattern": "^js-" }],
-    { "unspecified": "top" }
-  ]
-}
-```
-
-The first element is the bucket list, the second is secondary options (currently only `unspecified: "top" | "bottom"` &mdash; default `"top"`). A flat array of buckets is also accepted:
-
-```json
-{
-  "tailwindClassOrder": ["unknown", "tailwind", { "pattern": "^js-" }]
-}
-```
-
-Classes that don&rsquo;t match any bucket go to the position indicated by `unspecified`.
-
-### External config file
-
-```json
-{
-  "tailwindClassOrder": "./tailwind-class-order.json"
-}
-```
-
-The path is resolved relative to your `.prettierrc` location (same resolver as `tailwindPropertyOrder`).
+1. **Phase 1 &mdash; priority assignment.** For each class:
+   - Try every `{pattern}` bucket (in config order, first match wins). This applies regardless of whether a pattern appears before or after `"tailwind"` / `"unknown"` in the config.
+   - If no pattern matched: assign to the first `"tailwind"` bucket (non-null bigint) or the first `"unknown"` bucket (null bigint). Otherwise leave unspecified.
+2. **Phase 2 &mdash; emit in config order.** Iterate buckets in the order written by the user; emit their members. The `"tailwind"` bucket is sorted; pattern and `"unknown"` buckets preserve input order. Unspecified classes go to the front or back per `unspecified`.
 
 ### Default
 
@@ -163,9 +171,7 @@ When not set, the plugin behaves as if configured with `[["unknown", "tailwind"]
 **1. Push JS hooks to the end**
 
 ```json
-{
-  "tailwindClassOrder": [["unknown", "tailwind", { "pattern": "^js-" }], { "unspecified": "bottom" }]
-}
+["unknown", "tailwind", { "pattern": "^js-" }]
 ```
 
 ```
@@ -175,12 +181,10 @@ Output:  custom-class flex mt-4 js-toggle
 
 **2. Keep BEM modifiers next to the base class**
 
-Both `icon` and `icon--check-circle` match `^icon` and land in the same bucket, preserving input order:
+Both `icon` and `icon--check-circle` match `^icon(?:--|$)` and land in the same bucket, preserving input order:
 
 ```json
-{
-  "tailwindClassOrder": [[{ "pattern": "^icon(?:--|$)" }, "unknown", "tailwind"]]
-}
+[{ "pattern": "^icon(?:--|$)" }, "unknown", "tailwind"]
 ```
 
 ```
@@ -193,14 +197,12 @@ Output:  icon icon--check-circle flex mt-4
 Utilities that set multiple CSS properties (e.g. `h1`, `grid-cols-center`) can be extracted ahead of single-purpose utilities:
 
 ```json
-{
-  "tailwindClassOrder": [["unknown", { "pattern": "^(h[1-6]|grid-cols-)" }, "tailwind"]]
-}
+["unknown", { "pattern": "^(h[1-6]|grid-cols-)" }, "tailwind"]
 ```
 
 ### Interaction with `tailwindPropertyOrder`
 
-Property order only applies inside the `"tailwind"` bucket. Pattern and `"unknown"` buckets always keep input order. If you need BEM modifiers sorted by a custom scheme, use multiple patterns (e.g. `^icon$` before `^icon--`) to split them explicitly.
+Property order only applies inside the `"tailwind"` bucket. Pattern and `"unknown"` buckets always keep input order. To sort BEM modifiers by a custom scheme, use separate patterns (e.g. `^icon$` before `^icon--`).
 
 ## `tailwindAttributes`
 

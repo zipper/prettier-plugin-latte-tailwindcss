@@ -191,10 +191,15 @@ export async function loadClassOrderConfig(configPath: string, configDir: string
  * Resolve the user-provided `tailwindClassOrder` value into a ClassOrderContext.
  *
  * Dispatch:
- *  - Array → parse directly.
- *  - Non-empty string → treat as path and load via jiti.
+ *  - String starting with `[` → parse as JSON-encoded config array.
+ *  - Other non-empty string → treat as path and load via jiti.
  *  - undefined / empty or whitespace-only string → implicit default.
- *  - Anything else (object, number, boolean, null) → warn + default.
+ *  - Array (direct, only reachable via API callers bypassing prettier schema) → parse directly.
+ *  - Anything else → warn + default.
+ *
+ * The array branch is kept for API compatibility (prettier CLI collapses arrays in
+ * non-`array:true` schemas to their last element, so in `.prettierrc.*` the config
+ * must be either a string path or a JSON-encoded string).
  *
  * Never throws; always returns a valid context so call-sites can unconditionally
  * run the bucket algorithm (single code-path).
@@ -205,8 +210,22 @@ export async function resolveClassOrderConfig(value: unknown, configDir: string)
   }
 
   if (typeof value === 'string') {
-    if (value.trim() === '') {
+    const trimmed = value.trim()
+    if (trimmed === '') {
       return defaultClassOrderContext()
+    }
+    if (trimmed.startsWith('[')) {
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(trimmed)
+      } catch (err) {
+        console.warn(
+          `[prettier-plugin-latte-tailwindcss] tailwindClassOrder: failed to parse JSON-encoded config — falling back to default`,
+          err
+        )
+        return defaultClassOrderContext()
+      }
+      return parseClassOrderConfig(parsed) ?? defaultClassOrderContext()
     }
     const loaded = await loadClassOrderConfig(value, configDir)
     return loaded ?? defaultClassOrderContext()
@@ -217,7 +236,7 @@ export async function resolveClassOrderConfig(value: unknown, configDir: string)
   }
 
   console.warn(
-    `[prettier-plugin-latte-tailwindcss] tailwindClassOrder: expected array or string path, got ${typeof value} — falling back to default`
+    `[prettier-plugin-latte-tailwindcss] tailwindClassOrder: expected string path or JSON-encoded array, got ${typeof value} — falling back to default`
   )
   return defaultClassOrderContext()
 }
@@ -225,15 +244,24 @@ export async function resolveClassOrderConfig(value: unknown, configDir: string)
 // ─── Bucket algorithm ───
 
 /**
- * Greedy bucket-by-bucket sorter.
+ * Priority-based bucket sorter with two phases.
  *
- * For each bucket in order:
- *   1. Select entries from `remaining` that match the bucket.
- *   2. For `tailwind` buckets, sort the selection via the comparator.
- *      For `unknown` / `pattern` buckets, preserve input order (stable).
- *   3. Append selection to result; subtract it from remaining.
+ * **Phase 1 — assign each entry to a bucket (priority):**
+ *   - Explicit `{pattern}` buckets have priority over catchall buckets, regardless of
+ *     their position in the config. Among patterns, first-match wins.
+ *   - If no pattern matches: the first `"tailwind"` bucket catches non-null bigint
+ *     entries; the first `"unknown"` bucket catches null-bigint entries.
+ *   - Otherwise the entry is left unspecified.
  *
- * Leftover (unmatched) entries go to the front or back based on `ctx.unspecified`.
+ * **Phase 2 — emit entries in user-defined bucket order:**
+ *   - `"tailwind"` bucket members are sorted via the comparator.
+ *   - `"unknown"` and `{pattern}` bucket members keep input order (stable).
+ *   - Unspecified entries go to front or back per `ctx.unspecified`.
+ *
+ * This separates *membership* (fixed priority: pattern > catchall) from *output
+ * order* (user-controlled via bucket sequence). Users can place `"tailwind"` anywhere
+ * in the config without worrying that it will swallow classes a later pattern would
+ * want — patterns always win.
  *
  * Generic over the entry shape so call-sites (`sortClassList`, `sortGroup`) can pass
  * their native representations (plain `[name, bigint]` tuples or richer objects)
@@ -253,28 +281,61 @@ export function applyBuckets<T>(
   twBigintOf: (e: T) => bigint | null,
   compareTailwind: (a: T, b: T) => number
 ): T[] {
-  let remaining = entries.slice()
-  const result: T[] = []
+  const n = entries.length
+  const UNSPECIFIED = -1
+  const assignment = new Array<number>(n).fill(UNSPECIFIED)
 
-  for (const bucket of ctx.buckets) {
-    if (bucket.kind === 'tailwind') {
-      const matched = remaining.filter((e) => twBigintOf(e) !== null)
-      matched.sort(compareTailwind)
-      result.push(...matched)
-      remaining = remaining.filter((e) => twBigintOf(e) === null)
-    } else if (bucket.kind === 'unknown') {
-      const matched = remaining.filter((e) => twBigintOf(e) === null)
-      // stable — no sort
-      result.push(...matched)
-      remaining = remaining.filter((e) => twBigintOf(e) !== null)
-    } else {
-      // pattern
-      const regex = bucket.regex!
-      const matched = remaining.filter((e) => regex.test(nameOf(e)))
-      // stable — no sort
-      result.push(...matched)
-      remaining = remaining.filter((e) => !regex.test(nameOf(e)))
+  const patternBuckets: { bucket: CompiledBucket; index: number }[] = []
+  let firstTailwindIndex = UNSPECIFIED
+  let firstUnknownIndex = UNSPECIFIED
+  for (let i = 0; i < ctx.buckets.length; i++) {
+    const b = ctx.buckets[i]
+    if (b.kind === 'pattern') {
+      patternBuckets.push({ bucket: b, index: i })
+    } else if (b.kind === 'tailwind' && firstTailwindIndex === UNSPECIFIED) {
+      firstTailwindIndex = i
+    } else if (b.kind === 'unknown' && firstUnknownIndex === UNSPECIFIED) {
+      firstUnknownIndex = i
     }
+  }
+
+  // Phase 1: assign bucket to each entry (priority-first)
+  for (let j = 0; j < n; j++) {
+    const name = nameOf(entries[j])
+    let matched = UNSPECIFIED
+    for (const { bucket, index } of patternBuckets) {
+      if (bucket.regex!.test(name)) {
+        matched = index
+        break
+      }
+    }
+    if (matched === UNSPECIFIED) {
+      const bigint = twBigintOf(entries[j])
+      if (bigint !== null && firstTailwindIndex !== UNSPECIFIED) {
+        matched = firstTailwindIndex
+      } else if (bigint === null && firstUnknownIndex !== UNSPECIFIED) {
+        matched = firstUnknownIndex
+      }
+    }
+    assignment[j] = matched
+  }
+
+  // Phase 2: emit in user-defined bucket order
+  const result: T[] = []
+  for (let i = 0; i < ctx.buckets.length; i++) {
+    const members: T[] = []
+    for (let j = 0; j < n; j++) {
+      if (assignment[j] === i) members.push(entries[j])
+    }
+    if (ctx.buckets[i].kind === 'tailwind') {
+      members.sort(compareTailwind)
+    }
+    result.push(...members)
+  }
+
+  const remaining: T[] = []
+  for (let j = 0; j < n; j++) {
+    if (assignment[j] === UNSPECIFIED) remaining.push(entries[j])
   }
 
   return ctx.unspecified === 'top' ? [...remaining, ...result] : [...result, ...remaining]

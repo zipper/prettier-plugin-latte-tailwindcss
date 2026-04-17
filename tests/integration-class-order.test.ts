@@ -212,35 +212,38 @@ describe('integration — class order + property order', () => {
 // ─── b) Realistic example from spec ───
 
 describe('integration — realistic class-order example from spec', () => {
-  it('["unknown", {pattern:"^icon"}, "tailwind", {pattern:"^js-"}] — greedy unknown swallows all null-bigint classes', () => {
-    // Important real-world edge case: when `unknown` appears BEFORE a pattern bucket,
-    // it greedily claims every null-bigint class (including ones the pattern would match).
-    // The pattern bucket after it is effectively unreachable for unknown classes.
-    // This is not a bug — it matches the documented greedy semantics.
+  it('["unknown", {pattern:"^icon"}, "tailwind", {pattern:"^js-"}] — patterns win, unknown catches only leftover nulls', () => {
+    // Priority-based: explicit patterns always win over `unknown` / `tailwind` catchalls,
+    // regardless of position. `unknown` receives only null-bigint classes that no pattern claims.
     const ctx = createMockContext([
       ['unknown', { pattern: '^icon' }, 'tailwind', { pattern: '^js-' }],
       { unspecified: 'top' }
     ])
     const result = sortClasses('p-4 icon js-toggle search-input text-lg icon--search flex', ctx)
-    // unknown (stable, ALL null-bigint in input order): icon, js-toggle, search-input, icon--search
-    // pattern ^icon: nothing left to match
-    // tailwind (bigint sort): flex(10), p-4(200), text-lg(401)
-    // pattern ^js-: nothing left to match
-    expect(result).toBe('icon js-toggle search-input icon--search flex p-4 text-lg')
+    // Priority assignment: icon/icon--search → ^icon, js-toggle → ^js-,
+    //                     search-input → unknown, flex/p-4/text-lg → tailwind.
+    // Output order follows config:
+    //   unknown:   [search-input]
+    //   ^icon:     [icon, icon--search]
+    //   tailwind:  [flex, p-4, text-lg]   (sorted)
+    //   ^js-:      [js-toggle]
+    expect(result).toBe('search-input icon icon--search flex p-4 text-lg js-toggle')
   })
 
-  it('pattern BEFORE "unknown" — correct way to isolate ^icon / ^js- from generic unknown', () => {
-    // To make patterns meaningful alongside `unknown`, put them FIRST:
+  it('moving pattern BEFORE "unknown" in config only changes output order — membership is unchanged', () => {
+    // Same classes are routed to the same buckets; only where each bucket appears in the
+    // final output differs (^icon is now emitted first).
     const ctx = createMockContext([
       [{ pattern: '^icon' }, 'unknown', 'tailwind', { pattern: '^js-' }],
       { unspecified: 'top' }
     ])
     const result = sortClasses('p-4 icon js-toggle search-input text-lg icon--search flex', ctx)
-    // pattern ^icon (stable): icon, icon--search
-    // unknown (stable, remaining null-bigint): js-toggle, search-input
-    // tailwind (bigint sort): flex, p-4, text-lg
-    // pattern ^js-: nothing left (js-toggle was already stolen by `unknown`)
-    expect(result).toBe('icon icon--search js-toggle search-input flex p-4 text-lg')
+    // Output order:
+    //   ^icon:     [icon, icon--search]
+    //   unknown:   [search-input]
+    //   tailwind:  [flex, p-4, text-lg]
+    //   ^js-:      [js-toggle]
+    expect(result).toBe('icon icon--search search-input flex p-4 text-lg js-toggle')
   })
 })
 
@@ -248,17 +251,17 @@ describe('integration — realistic class-order example from spec', () => {
 
 describe('integration — n:class class-order parity with sortClasses', () => {
   it('applies bucket algorithm at token level (matches sortClasses behavior)', () => {
-    // Use the pattern-first ordering so each bucket actually receives entries
     const ctx = createMockContext([
       [{ pattern: '^icon' }, 'unknown', 'tailwind', { pattern: '^js-' }],
       { unspecified: 'top' }
     ])
     // Bare-identifier sortable tokens route through the same bucketing as sortClasses
     const result = sortNClassValue('p-4, icon, js-toggle, search-input, text-lg, icon--search, flex', ctx, nclassOpts)
-    // pattern ^icon: icon, icon--search
-    // unknown (remaining null-bigint, stable): js-toggle, search-input
-    // tailwind: flex, p-4, text-lg
-    expect(result).toBe('icon, icon--search, js-toggle, search-input, flex, p-4, text-lg')
+    // ^icon:    [icon, icon--search]
+    // unknown:  [search-input]
+    // tailwind: [flex, p-4, text-lg]
+    // ^js-:     [js-toggle]
+    expect(result).toBe('icon, icon--search, search-input, flex, p-4, text-lg, js-toggle')
   })
 
   it('barrier tokens split bucketing per group', () => {
@@ -282,25 +285,71 @@ describe('integration — n:class class-order parity with sortClasses', () => {
   })
 })
 
-// ─── d) Greedy stealing: earlier pattern wins over later "tailwind" ───
+// ─── d) Pattern priority: patterns always win over tailwind catchall ───
 
-describe('integration — greedy pattern stealing', () => {
-  it('pattern defined BEFORE "tailwind" steals known TW utilities that match', () => {
-    // Pattern ^b matches both `bg-white` (TW) and `border` (TW). Pattern runs first
-    // → those utilities are stolen into the pattern bucket (stable input order),
-    // only the rest flows into the tailwind bucket.
+describe('integration — pattern priority over tailwind catchall', () => {
+  it('pattern defined BEFORE "tailwind" claims matching TW utilities; output starts with pattern bucket', () => {
     const ctx = createMockContext([[{ pattern: '^b' }, 'tailwind'], { unspecified: 'top' }])
     const result = sortClasses('flex border bg-white p-4', ctx)
-    // pattern ^b (stable): border, bg-white (input order!)
-    // tailwind (sorted): flex, p-4
+    // ^b (stable):  [border, bg-white]    (input order; both are known TW but pattern wins)
+    // tailwind:     [flex, p-4]           (sorted)
     expect(result).toBe('border bg-white flex p-4')
   })
 
-  it('pattern AFTER "tailwind" does not steal — tailwind claims first', () => {
+  it('pattern defined AFTER "tailwind" also claims matches — same membership, later output position', () => {
     const ctx = createMockContext([['tailwind', { pattern: '^b' }], { unspecified: 'top' }])
-    // tailwind (sorted by bigint): flex(10) p-4(200) border(700) bg-white(600) — actually flex(10) p-4(200) bg-white(600) border(700)
     const result = sortClasses('flex border bg-white p-4', ctx)
-    expect(result).toBe('flex p-4 bg-white border')
+    // tailwind:  [flex, p-4]
+    // ^b:        [border, bg-white]
+    expect(result).toBe('flex p-4 border bg-white')
+  })
+})
+
+// ─── d.2) Priority model beats catchall position — fokus-optik real case ───
+
+describe('integration — priority model: patterns beat tailwind/unknown catchalls', () => {
+  it('pattern AFTER "tailwind" still claims classes with non-null bigint (fokus-optik ajax case)', () => {
+    // Simulates the fokus-optik scenario where `ajax` and `js-*` would be mapped by
+    // Tailwind as known utilities (non-null bigint) via user CSS. A naive greedy
+    // algorithm with tailwind-before-pattern would put them in the tailwind bucket,
+    // breaking the user's intent. Priority model ensures patterns always win.
+    const { context } = createMockDesignSystem()
+    // Simulate ajax being a known TW utility (e.g. from @utility or @source)
+    const origGetClassOrder = context.getClassOrder
+    context.getClassOrder = (classList) =>
+      classList.map((c): [string, bigint | null] => {
+        if (c === 'ajax') return [c, 5000n]
+        const pair = origGetClassOrder([c])[0]
+        return pair
+      })
+    const parsed = parseClassOrderConfig([
+      ['unknown', { pattern: '^icon(?:--|$)' }, 'tailwind', { pattern: '^ajax' }, { pattern: '^js-' }],
+      { unspecified: 'top' }
+    ])
+    if (parsed) context.classOrder = parsed
+
+    const result = sortClasses('w-full ajax', context)
+    // w-full → tailwind, ajax → ^ajax pattern (priority, even though after tailwind)
+    // Output: tailwind [w-full], then ^ajax [ajax]
+    expect(result).toBe('w-full ajax')
+  })
+
+  it('pattern position in config controls output position only', () => {
+    const { context } = createMockDesignSystem()
+    const origGetClassOrder = context.getClassOrder
+    context.getClassOrder = (classList) =>
+      classList.map((c): [string, bigint | null] => (c === 'ajax' ? [c, 5000n] : origGetClassOrder([c])[0]))
+
+    const parsedAfter = parseClassOrderConfig([['tailwind', { pattern: '^ajax' }], { unspecified: 'top' }])
+    const parsedBefore = parseClassOrderConfig([[{ pattern: '^ajax' }, 'tailwind'], { unspecified: 'top' }])
+
+    const ctxAfter = { ...context, classOrder: parsedAfter! }
+    const ctxBefore = { ...context, classOrder: parsedBefore! }
+
+    // w-full bigint=101, p-4 bigint=200 → tailwind sort ascending: w-full, p-4
+    expect(sortClasses('w-full ajax p-4', ctxAfter)).toBe('w-full p-4 ajax')
+    expect(sortClasses('w-full ajax p-4', ctxBefore)).toBe('ajax w-full p-4')
+    // Same membership (ajax → ^ajax, w-full/p-4 → tailwind), different output order
   })
 })
 

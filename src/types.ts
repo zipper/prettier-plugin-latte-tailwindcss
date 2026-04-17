@@ -20,8 +20,8 @@ export interface LatteOptions {
   tailwindClassRegex?: string
   /** Path to a JS/JSON file with stylelint-order compatible property order config */
   tailwindPropertyOrder?: string
-  /** Class ordering buckets: either an inline array or a path to a JS/JSON config file */
-  tailwindClassOrder?: string | unknown[]
+  /** Class ordering buckets: path to a JS/JSON config file, or a JSON-encoded string starting with '[' */
+  tailwindClassOrder?: string
   /** Controls how whitespace separators between n:class tokens are handled when tokens are reordered */
   tailwindNclassWhitespace?: 'preserve' | 'normalize-barriers' | 'normalize'
 }

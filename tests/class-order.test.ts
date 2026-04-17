@@ -150,6 +150,27 @@ describe('resolveClassOrderConfig', () => {
     expect(ctx.unspecified).toBe('bottom')
   })
 
+  it('parses a JSON-encoded string starting with "["', async () => {
+    const ctx = await resolveClassOrderConfig(
+      '[["unknown", {"pattern":"^js-"}, "tailwind"], {"unspecified":"bottom"}]',
+      testCwd
+    )
+    expect(ctx.buckets.map((b) => b.kind)).toEqual(['unknown', 'pattern', 'tailwind'])
+    expect(ctx.unspecified).toBe('bottom')
+  })
+
+  it('parses JSON-encoded flat array', async () => {
+    const ctx = await resolveClassOrderConfig('["unknown", "tailwind", {"pattern":"^js-"}]', testCwd)
+    expect(ctx.buckets.map((b) => b.kind)).toEqual(['unknown', 'tailwind', 'pattern'])
+    expect(ctx.unspecified).toBe('top')
+  })
+
+  it('falls back to default when JSON-encoded string has syntax error', async () => {
+    const ctx = await resolveClassOrderConfig('[not valid json', testCwd)
+    expect(ctx).toEqual(defaultClassOrderContext())
+    expect(warnSpy).toHaveBeenCalled()
+  })
+
   it('falls back to default when array config is invalid (empty)', async () => {
     const ctx = await resolveClassOrderConfig([], testCwd)
     expect(ctx).toEqual(defaultClassOrderContext())
@@ -423,16 +444,20 @@ describe('applyBuckets', () => {
       mkEntry('w-4', 7n)
     ]
     const sorted = applyBuckets(entries, ctx, nameOf, twBigintOf, cmpByBigint)
-    // unknown (null bigint, input order, minus anything that later patterns would
-    // re-claim — but "unknown" runs first and subtracts):
-    //   null entries are: js-toggle, icon--lg, custom-thing, icon
-    //   → all go to unknown bucket in input order.
-    // Nothing left for pattern^icon or pattern^js- because unknown took them.
-    // tailwind bucket: [w-4 (7), flex (10)]
-    expect(sorted.map((e) => e.name)).toEqual(['js-toggle', 'icon--lg', 'custom-thing', 'icon', 'w-4', 'flex'])
+    // Priority-based assignment (patterns win over catchalls regardless of position):
+    //   js-toggle    → ^js- pattern
+    //   flex, w-4    → tailwind (non-null, no pattern match)
+    //   icon--lg, icon → ^icon pattern
+    //   custom-thing → unknown (null, no pattern match)
+    // Output order follows config:
+    //   unknown:      [custom-thing]
+    //   ^icon:        [icon--lg, icon]            (stable input order)
+    //   tailwind:     [w-4, flex]                 (sorted asc by bigint)
+    //   ^js-:         [js-toggle]
+    expect(sorted.map((e) => e.name)).toEqual(['custom-thing', 'icon--lg', 'icon', 'w-4', 'flex', 'js-toggle'])
   })
 
-  it('full pipeline ordering changes when pattern precedes unknown', () => {
+  it('pattern position controls output order only — membership is priority-based', () => {
     const ctx: ClassOrderContext = {
       buckets: [
         { kind: 'pattern', regex: /^icon/, raw: { pattern: '^icon' } },
@@ -451,10 +476,11 @@ describe('applyBuckets', () => {
       mkEntry('w-4', 7n)
     ]
     const sorted = applyBuckets(entries, ctx, nameOf, twBigintOf, cmpByBigint)
-    // pattern ^icon (input order): icon--lg, icon
-    // unknown (remaining nulls): js-toggle, custom-thing
-    // tailwind (sorted): w-4, flex
-    // pattern ^js- (remaining after unknown stole it — none)
-    expect(sorted.map((e) => e.name)).toEqual(['icon--lg', 'icon', 'js-toggle', 'custom-thing', 'w-4', 'flex'])
+    // Same membership as previous test (patterns win), only emitted order differs:
+    //   ^icon:        [icon--lg, icon]
+    //   unknown:      [custom-thing]
+    //   tailwind:     [w-4, flex]
+    //   ^js-:         [js-toggle]
+    expect(sorted.map((e) => e.name)).toEqual(['icon--lg', 'icon', 'custom-thing', 'w-4', 'flex', 'js-toggle'])
   })
 })

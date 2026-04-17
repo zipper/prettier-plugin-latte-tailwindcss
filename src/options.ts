@@ -51,17 +51,14 @@ export const options: Record<string, SupportOption> = {
   tailwindClassOrder: {
     type: 'string',
     default: '',
-    // Nedokumentované prettier API: exception vypne schema validaci pro non-string hodnoty.
-    // Umožňuje zadat pole přímo v .prettierrc.* bez stringifikace/escapování.
-    exception: (value: unknown) => Array.isArray(value),
     category: 'Tailwind CSS',
     description:
       'Configurable class ordering buckets (stylelint-order style). ' +
-      'Accepts either a JSON array directly in .prettierrc.* (e.g. ["unknown", "tailwind", {"pattern":"^js-"}]) ' +
-      'or a path to a JS/JSON file exporting the config. ' +
+      'Value is either a path to a JS/JSON file exporting the config, or a JSON-encoded string ' +
+      'starting with "[" (e.g. "[\\"unknown\\", \\"tailwind\\", {\\"pattern\\":\\"^js-\\"}]"). ' +
       'Tuple form [items, { "unspecified": "top"|"bottom" }] is also supported. ' +
       'Empty string (default) preserves the built-in behavior (unknown classes first, then Tailwind).'
-  } as any,
+  },
 
   tailwindNclassWhitespace: {
     type: 'choice',
