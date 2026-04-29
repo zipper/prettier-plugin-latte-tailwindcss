@@ -24,7 +24,7 @@ Patterns follow the same format as [`tailwindCSS.experimental.classRegex`](https
 **Tuple pattern** &mdash; An `[outer, inner]` array. The outer regex finds a region of interest, the inner regex extracts class strings within it.
 
 ```json
-["\\b\\w*[cC]lass\\w*:\\s[^,}]*", "[\"'`]([^\"'`]*)[\"'`]"]
+["\\b\\w*[cC]lass\\w*\\s*:\\s*([^,}]*)", "[\"'`]([^\"'`]*)[\"'`]"]
 ```
 
 Tuple patterns are more flexible: the outer narrows the search scope, the inner extracts the actual class values. This avoids false positives.
@@ -55,7 +55,7 @@ These patterns cover common Latte/Nette constructs:
 ```json
 [
   ["classList\\.(?:add|remove|toggle)\\(([^)]*)\\)", "[\"'`]([^\"'`]*)[\"'`]"],
-  ["\\b\\w*[cC]lass\\w*:\\s[^,}]*", "[\"'`]([^\"'`]*)[\"'`]"],
+  ["\\b\\w*[cC]lass\\w*\\s*:\\s*([^,}]*)", "[\"'`]([^\"'`]*)[\"'`]"],
   ["n:class=\"([^\"]*)\"", "[\"'`]([^\"'`]*)[\"'`]"],
   "class(?:Name)?\\s*=>\\s*[\"'`]([^\"'`]*)[\"'`]",
   ["\\$\\w*[cC]lass\\w*\\s*=\\s*(?:\\[[^\\]]*\\]|[^\\n]*)", "[\"'`]([^\"'`]*)[\"'`]"]
@@ -84,7 +84,7 @@ These patterns go in your IDE's Tailwind CSS extension configuration. They serve
 {
   "tailwindCSS.experimental.classRegex": [
     ["classList\\.(?:add|remove|toggle)\\(([^)]*)\\)", "[\"'`]([^\"'`]*)[\"'`]"],
-    ["\\b\\w*[cC]lass\\w*:\\s[^,}]*", "[\"'`]([^\"'`]*)[\"'`]"],
+    ["\\b\\w*[cC]lass\\w*\\s*:\\s*([^,}]*)", "[\"'`]([^\"'`]*)[\"'`]"],
     ["n:class=\"([^\"]*)\"", "[\"'`]([^\"'`]*)[\"'`]"],
     "class(?:Name)?\\s*=>\\s*[\"'`]([^\"'`]*)[\"'`]",
     ["\\$\\w*[cC]lass\\w*\\s*=\\s*(?:\\[[^\\]]*\\]|[^\\n]*)", "[\"'`]([^\"'`]*)[\"'`]"]
@@ -98,7 +98,7 @@ These patterns go in your IDE's Tailwind CSS extension configuration. They serve
   "experimental": {
     "classRegex": [
       ["classList\\.(?:add|remove|toggle)\\(([^)]*)\\)", "[\"'`]([^\"'`]*)[\"'`]"],
-      ["\\b\\w*[cC]lass\\w*:\\s[^,}]*", "[\"'`]([^\"'`]*)[\"'`]"],
+      ["\\b\\w*[cC]lass\\w*\\s*:\\s*([^,}]*)", "[\"'`]([^\"'`]*)[\"'`]"],
       ["n:class=\"([^\"]*)\"", "[\"'`]([^\"'`]*)[\"'`]"],
       "class(?:Name)?\\s*=>\\s*[\"'`]([^\"'`]*)[\"'`]",
       ["\\$\\w*[cC]lass\\w*\\s*=\\s*(?:\\[[^\\]]*\\]|[^\\n]*)", "[\"'`]([^\"'`]*)[\"'`]"]
